@@ -31,8 +31,6 @@ namespace Obsidian.MSBuild
         [Required]
         public string SigningKey { get; set; }
 
-        public string SigningKeyPassword { get; set; }
-
         private byte[] GetData(FileInfo file)
         {
             using (var fileStream = file.OpenRead())
