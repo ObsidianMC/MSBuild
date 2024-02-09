@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project TreatAsLocalProperty="TaskFolder">
+	<PropertyGroup>
+		<ObsidianTaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\Obsidian.MSBuild.dll</ObsidianTaskAssembly>
+
+		<PluginName Condition="$(PluginName) == ''">Obsidian Plugin</PluginName>
+		<PluginVersion Condition="$(PluginVersion) == ''">1.0</PluginVersion>
+	</PropertyGroup>
+</Project>

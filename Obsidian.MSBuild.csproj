@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+
+		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Description>
+			$(Description)
+			Used for packing obsidianmc plugins.
+		</Description>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Build.Framework" Version="17.8.3" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.8.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="content\**" PackagePath="%(RecursiveDir)%(FileName)%(Extension)" />
+	</ItemGroup>
+
+	<!--
+    The include needs to happen after output has been copied to build output folder
+    but before NuGet generates a nuspec. See https://github.com/NuGet/Home/issues/4704.
+    -->
+	<!--<Target Name="PackTaskDependencies" BeforeTargets="GenerateNuspec;_GetPackageFiles">
+		<MSBuild Projects="@(ToolProjectReference)" Targets="Publish" Properties="PublishDir=$(MSBuildProjectDirectory)\$(PublishDir);TargetFramework=$(TargetFramework)" />
+	
+		<ItemGroup>
+			<_PackageFiles Include="$(MSBuildProjectDirectory)\$(PublishDir)\*.*" Exclude="**\$(AssemblyName).*">
+				<PackagePath>tool\$(TargetFramework)</PackagePath>
+				<Visible>false</Visible>
+				<BuildAction>Content</BuildAction>
+			</_PackageFiles>
+		</ItemGroup>
+
+		<Message Text="_PackageFiles: @(_PackageFiles)" Importance="high" />
+	</Target>-->
+</Project>
