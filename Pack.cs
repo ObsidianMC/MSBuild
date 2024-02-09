@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.IO.Pipes;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -135,16 +136,24 @@ namespace Obsidian.MSBuild
                 fs.Position = preHeaderStartPos;
                 writer.Write(hash);
 
-                using (var rsa = AsymmetricAlgorithm.Create("RSA"))
+                if (!string.IsNullOrEmpty(this.SigningKey))
                 {
-                    rsa.FromXmlString(this.SigningKey);
+                    //Write signature if there's a key
+                    using (var rsa = AsymmetricAlgorithm.Create("RSA"))
+                    {
+                        rsa.FromXmlString(this.SigningKey);
 
-                    var formatter = new RSAPKCS1SignatureFormatter(rsa);
+                        var formatter = new RSAPKCS1SignatureFormatter(rsa);
 
-                    formatter.SetHashAlgorithm("SHA1");
-                    var sig = formatter.CreateSignature(hash);
+                        formatter.SetHashAlgorithm("SHA1");
+                        var sig = formatter.CreateSignature(hash);
 
-                    writer.Write(sig);
+                        writer.Write(sig);
+                    }
+                }
+                else
+                {
+                    fs.Seek(256, SeekOrigin.Current);
                 }
 
                 // write data length after hash
