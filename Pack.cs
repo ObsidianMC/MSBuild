@@ -13,7 +13,7 @@ namespace Obsidian.MSBuild
     public sealed class Pack : Task
     {
         //WHen should we start compressing?
-        const int MinCompressionSize = 1024;
+        public int MinCompressionSize = 1024;
 
         [Required]
         public string PublishDir { get; set; }
@@ -27,7 +27,6 @@ namespace Obsidian.MSBuild
         [Required]
         public string PluginVersion { get; set; }
 
-        [Required]
         public string SigningKey { get; set; }
 
         private byte[] GetData(FileInfo file)
