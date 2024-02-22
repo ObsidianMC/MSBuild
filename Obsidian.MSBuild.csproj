@@ -4,19 +4,49 @@
 		<TargetFramework>netstandard2.0</TargetFramework>
 
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
+		<AssemblyName>Obsidian.MSBuild</AssemblyName>
+		<RootNamespace>Obsidian.MSBuild</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Description>
-			Used for packing obsidianmc plugins.
-		</Description>
+		<Version>1.0.0</Version>
+		<Authors>Obsidian Team</Authors>
+		<Company>Obsidian Team</Company>
+		<Product>Obsidian</Product>
+		<Description>MSBuild tasks for obsidian plugins.</Description>
+		<PackageProjectUrl>https://github.com/ObsidianMC/MSBuild</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/ObsidianMC/MSBuild</RepositoryUrl>
+		<PackageTags>minecraft obsidian msbuild plugin plugins pluginpacking</PackageTags>
+		<PackageIconUrl>https://i.imgur.com/jU1lkP4.png</PackageIconUrl>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<NoWarn>1591</NoWarn>
+		<Title>Obsidian MSBuild</Title>
+		<PackageIcon>icon.png</PackageIcon>
+		<!--<PackageReadmeFile>README.md</PackageReadmeFile>-->
 	</PropertyGroup>
 
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Build.Framework" Version="17.8.3" />
-		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.8.3" />
+		<PackageReference Include="Microsoft.Build.Framework" Version="17.9.5" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.9.5" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Content Include="content\**" PackagePath="%(RecursiveDir)%(FileName)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="icon.png">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
+		<None Include="LICENSE">
+			<Pack>True</Pack>
+			<PackagePath></PackagePath>
+		</None>
+		<!--<None Include="..\README.md">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>-->
 	</ItemGroup>
 </Project>
