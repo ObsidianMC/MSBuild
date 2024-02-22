@@ -15,7 +15,6 @@ namespace Obsidian.MSBuild
         //WHen should we start compressing?
         public int MinCompressionSize = 1024;
 
-        [Required]
         public string PublishDir { get; set; }
 
         [Required]

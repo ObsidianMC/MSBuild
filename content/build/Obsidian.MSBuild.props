@@ -10,5 +10,6 @@
 	<PropertyGroup>
 		<PluginName Condition="$(PluginName) == ''">Obsidian Plugin</PluginName>
 		<PluginVersion Condition="$(PluginVersion) == ''">1.0</PluginVersion>
+		<PublishDir Condition="$(PublishDir) == ''">./bin/publish/</PublishDir>
 	</PropertyGroup>
 </Project>

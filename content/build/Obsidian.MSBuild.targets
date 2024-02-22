@@ -6,6 +6,6 @@
 	</Target>
 	<Target Name="PackPluginOnBuild" Condition="'$(Configuration)' == 'Release'" AfterTargets="AfterBuild">
 		<Pack PluginName="$(PluginName)" PluginVersion="$(PluginVersion)"
-			  PublishDir="$(BuildDir)" ApiVersion="$(ApiVersion)" SigningKey="$(SigningKey)"/>
+			  PublishDir="$(PublishDir)" ApiVersion="$(ApiVersion)" SigningKey="$(SigningKey)"/>
 	</Target>
 </Project>
