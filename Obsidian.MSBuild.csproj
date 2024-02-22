@@ -22,7 +22,7 @@
 		<NoWarn>1591</NoWarn>
 		<Title>Obsidian MSBuild</Title>
 		<PackageIcon>icon.png</PackageIcon>
-		<!--<PackageReadmeFile>README.md</PackageReadmeFile>-->
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 
@@ -49,9 +49,4 @@
 			<PackagePath>\</PackagePath>
 		</None>
 	</ItemGroup>
-
-	<Target Name="MakeBuildDirectory" AfterTargets="Publish">
-		<MakeDir
-			Directories="$(BuildDir)" />
-	</Target>
 </Project>
