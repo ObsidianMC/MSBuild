@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
 	<Target Name="PackPlugin" AfterTargets="Publish">
+		<MakeDir Directories="$(PublishDir)"/>
+		
 		<Pack PluginName="$(PluginName)" PluginVersion="$(PluginVersion)"
 			  PublishDir="$(PublishDir)" ApiVersion="$(ApiVersion)" SigningKey="$(SigningKey)"/>
 	</Target>
 	<Target Name="PackPluginOnBuild" Condition="'$(Configuration)' == 'Release'" AfterTargets="AfterBuild">
+		<MakeDir Directories="$(PublishDir)"/>
+		
 		<Pack PluginName="$(PluginName)" PluginVersion="$(PluginVersion)"
 			  PublishDir="$(PublishDir)" ApiVersion="$(ApiVersion)" SigningKey="$(SigningKey)"/>
 	</Target>
