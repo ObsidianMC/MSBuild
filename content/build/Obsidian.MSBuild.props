@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<Project TreatAsLocalProperty="TaskFolder">
+<Project>
 	<PropertyGroup>
-		<TaskFolder Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netcoreapp2.0</TaskFolder>
-		<TaskFolder Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net46</TaskFolder>
+		<TaskFolder>$(MSBuildThisFileDirectory)..\tasks\netstandard2.0</TaskFolder>
+		<ObsidianTaskAssembly>$(TaskFolder)\$(MSBuildThisFileName).dll</ObsidianTaskAssembly>
+	</PropertyGroup>
 
-		<ObsidianTaskAssembly>$(MSBuildThisFileDirectory)..\tasks\$(TaskFolder)\Obsidian.MSBuild.dll</ObsidianTaskAssembly>
+	<UsingTask TaskName="$(MSBuildThisFileName).Pack" AssemblyFile="$(ObsidianTaskAssembly)" />
 
+	<PropertyGroup>
 		<PluginName Condition="$(PluginName) == ''">Obsidian Plugin</PluginName>
 		<PluginVersion Condition="$(PluginVersion) == ''">1.0</PluginVersion>
 	</PropertyGroup>
