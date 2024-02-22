@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
 	<UsingTask TaskName="Obsidian.MSBuild.Pack" AssemblyFile="$(ObsidianTaskAssembly)" />
+
+	<Target Name="PackPlugin" AfterTargets="Publish">
+		<Pack PluginName="$(PluginName)" PluginVersion="$(PluginVersion)"
+			  PublishDir="$(PublishDir)" ApiVersion="$(ApiVersion)" SigningKey="$(SigningKey)"/>
+	</Target>
+	<Target Name="PackPluginOnBuild" Condition="'$(Configuration)' == 'Release'" AfterTargets="AfterBuild">
+		<Pack PluginName="$(PluginName)" PluginVersion="$(PluginVersion)"
+			  PublishDir="$(BuildDir)" ApiVersion="$(ApiVersion)" SigningKey="$(SigningKey)"/>
+	</Target>
 </Project>

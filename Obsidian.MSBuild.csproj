@@ -37,16 +37,21 @@
 
 	<ItemGroup>
 		<None Include="icon.png">
-		  <Pack>True</Pack>
-		  <PackagePath>\</PackagePath>
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
 		</None>
 		<None Include="LICENSE">
 			<Pack>True</Pack>
 			<PackagePath></PackagePath>
 		</None>
-		<!--<None Include="..\README.md">
-		  <Pack>True</Pack>
-		  <PackagePath>\</PackagePath>
-		</None>-->
+		<None Include="README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
 	</ItemGroup>
+
+	<Target Name="MakeBuildDirectory" AfterTargets="Publish">
+		<MakeDir
+			Directories="$(BuildDir)" />
+	</Target>
 </Project>
