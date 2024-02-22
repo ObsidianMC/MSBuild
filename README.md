@@ -14,7 +14,7 @@ Install the package.
 
 Open up your csproj and make sure you have this in either a new or exisiting PropertGroup.
 
-```
+```csproj
 <PropertyGroup Name="PackPlugin" AfterTargets="Publish">
     <PublishDir>$(PublishUrl)</PublishDir> <!-- this would usually be your publish directory. -->
     <ApiVersion>{{Obsidian.API VERSION}}</ApiVersion <!-- this would be the Obsidian.API version -->
