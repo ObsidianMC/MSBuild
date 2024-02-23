@@ -15,10 +15,10 @@ namespace Obsidian.MSBuild
         //WHen should we start compressing?
         public int MinCompressionSize = 1024;
 
-        public string PublishDir { get; set; }
+        public string PluginPublishDir { get; set; }
 
         [Required]
-        public string ApiVersion { get; set; }
+        public string PluginApiVersion { get; set; }
 
         [Required]
         public string PluginName { get; set; }
@@ -26,7 +26,11 @@ namespace Obsidian.MSBuild
         [Required]
         public string PluginVersion { get; set; }
 
-        public string SigningKey { get; set; }
+        /// <summary>
+        /// Must be in XML format to be loaded and used properly. 
+        /// Can be a file or the element directly.
+        ///</summary>
+        public string PluginSigningKey { get; set; }
 
         private byte[] GetData(FileInfo file)
         {
@@ -70,7 +74,7 @@ namespace Obsidian.MSBuild
         public override bool Execute()
         {
             this.Log.LogMessage(MessageImportance.High, "------ Starting Plugin Packer ------");
-            var files = Directory.GetFiles(this.PublishDir)
+            var files = Directory.GetFiles(this.PluginPublishDir)
                 .Select(x => new FileInfo(x));
 
             this.Log.LogMessage(MessageImportance.High, "Gathering entries...");
@@ -84,7 +88,7 @@ namespace Obsidian.MSBuild
 
             this.Log.LogMessage(MessageImportance.High, "Entries gathered. Starting packing process..");
 
-            var filePath = Path.Combine(this.PublishDir, $"{this.PluginName}.obby");
+            var filePath = Path.Combine(this.PluginPublishDir, $"{this.PluginName}.obby");
             if (File.Exists(filePath))
                 File.Delete(filePath);
 
@@ -92,7 +96,7 @@ namespace Obsidian.MSBuild
             using (var writer = new BinaryWriter(fs))
             {
                 writer.Write(Encoding.ASCII.GetBytes("OBBY"));
-                writer.Write(this.ApiVersion);
+                writer.Write(this.PluginApiVersion);
 
                 this.Log.LogMessage(MessageImportance.High, "Header and ApiVersion written.");
 
@@ -132,12 +136,15 @@ namespace Obsidian.MSBuild
                 fs.Position = preHeaderStartPos;
                 writer.Write(hash);
 
-                if (!string.IsNullOrEmpty(this.SigningKey))
+                if (!string.IsNullOrEmpty(this.PluginSigningKey))
                 {
+                    if(File.Exists(this.PluginSigningKey))
+                        this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
+
                     //Write signature if there's a key
                     using (var rsa = AsymmetricAlgorithm.Create("RSA"))
                     {
-                        rsa.FromXmlString(this.SigningKey);
+                        rsa.FromXmlString(this.PluginSigningKey);
 
                         var formatter = new RSAPKCS1SignatureFormatter(rsa);
 

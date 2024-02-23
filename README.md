@@ -17,10 +17,10 @@ Open up your csproj and make sure you have this in either a new or exisiting Pro
 ```csproj
 <PropertyGroup Name="PackPlugin" AfterTargets="Publish">
     <PublishDir>$(PublishUrl)</PublishDir> <!-- this would usually be your publish directory. -->
-    <ApiVersion>{{Obsidian.API VERSION}}</ApiVersion <!-- this would be the Obsidian.API version -->
+    <PluginApiVersion>{{Obsidian.API VERSION}}</PluginApiVersion> <!-- this would be the Obsidian.API version -->
     <PluginName>{{YOUR PLUGIN NAME}}</PluginName>
     <PluginVersion>{{YOUR PLUGIN VERSION}}</PluginVersion>
-    <SigningKey>{{YOUR SIGNING KEY}}</SigningKey> <!-- this is optional. used for signing plugins. -->
+    <PluginSigningKey>{{YOUR SIGNING KEY}}</PluginSigningKey> <!-- this is optional. used for signing plugins. -->
 </PropertyGroup>
 ```
 
