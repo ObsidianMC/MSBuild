@@ -8,7 +8,7 @@
 	<UsingTask TaskName="$(MSBuildThisFileName).Pack" AssemblyFile="$(ObsidianTaskAssembly)" />
 
 	<PropertyGroup>
-		<PluginName Condition="$(PluginName) == ''">Obsidian Plugin</PluginName>
+		<PluginAssembly Condition="$(PluginAssembly) == ''">ObsidianPlugin</PluginAssembly>
 		<PluginVersion Condition="$(PluginVersion) == ''">1.0</PluginVersion>
 		<PluginPublishDir Condition="$(PluginPublishDir) == ''">./bin/publish/</PluginPublishDir>
 	</PropertyGroup>

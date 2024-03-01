@@ -22,7 +22,7 @@ namespace Obsidian.MSBuild
         public string PluginApiVersion { get; set; }
 
         [Required]
-        public string PluginName { get; set; }
+        public string PluginAssembly { get; set; }
 
         [Required]
         public string PluginVersion { get; set; }
@@ -99,7 +99,7 @@ namespace Obsidian.MSBuild
 
             this.Log.LogMessage(MessageImportance.High, "Entries gathered. Starting packing process..");
 
-            var filePath = Path.Combine(this.PluginPublishDir, $"{this.PluginName}.obby");
+            var filePath = Path.Combine(this.PluginPublishDir, $"{this.PluginAssembly}.obby");
             if (File.Exists(filePath))
                 File.Delete(filePath);
 
@@ -117,8 +117,8 @@ namespace Obsidian.MSBuild
                 var dataStartPos = fs.Position;
 
                 this.Log.LogMessage(MessageImportance.High,
-                    "{0}:{1}", this.PluginName, this.PluginVersion);
-                writer.Write(this.PluginName);
+                    "{0}:{1}", this.PluginAssembly, this.PluginVersion);
+                writer.Write(this.PluginAssembly);
                 writer.Write(this.PluginVersion);
 
 

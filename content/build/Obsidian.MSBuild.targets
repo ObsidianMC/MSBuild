@@ -3,7 +3,7 @@
 	<Target Name="PackPlugin" Condition="'$(Configuration)' == 'Release'" AfterTargets="AfterBuild;Publish">
 		<MakeDir Directories="$(PluginPublishDir)"/>
 		
-		<Pack PluginName="$(PluginName)" PluginVersion="$(PluginVersion)"
+		<Pack PluginAssembly="$(PluginAssembly)" PluginVersion="$(PluginVersion)"
 			  PluginPublishDir="$(PluginPublishDir)" PluginApiVersion="$(PluginApiVersion)" PluginSigningKey="$(PluginSigningKey)"/>
 	</Target>
 </Project>
