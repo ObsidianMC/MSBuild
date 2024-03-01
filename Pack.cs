@@ -14,6 +14,7 @@ namespace Obsidian.MSBuild
     {
         //WHen should we start compressing?
         public int MinCompressionSize = 1024;
+        public float CompressionTradeoff = 0.9f;
 
         public string PluginPublishDir { get; set; }
 
@@ -50,14 +51,24 @@ namespace Obsidian.MSBuild
 
             var currentLength = data.Length;
 
+            this.Log.LogMessage(MessageImportance.High, $"------ Packing {file.Name} ------");
+
+            this.Log.LogMessage(MessageImportance.High, $"Current file length: {currentLength}.");
+
             if (currentLength > MinCompressionSize)
             {
                 using (var ms = new MemoryStream(data.Length))
-                using (var deflateSteam = new DeflateStream(ms, CompressionMode.Compress))
                 {
-                    deflateSteam.Write(data, 0, data.Length);
+                    using (var deflateSteam = new DeflateStream(ms, CompressionMode.Compress))
+                        deflateSteam.Write(data, 0, data.Length);
 
-                    data = ms.ToArray();
+                    var compressedData = ms.ToArray();
+
+                    if (compressedData.Length < currentLength * CompressionTradeoff)
+                    {
+                        data = compressedData;
+                        this.Log.LogMessage(MessageImportance.High, $"Compressed length: {compressedData.Length}.");
+                    }
                 }
             }
 
@@ -122,9 +133,7 @@ namespace Obsidian.MSBuild
 
                 this.Log.LogMessage(MessageImportance.High, "Writing entries. ({0})", entries.Count);
                 foreach (var entry in entries)
-                {
                     writer.Write(entry.Data);
-                }
 
                 // set the hash
                 fs.Position = dataStartPos;
