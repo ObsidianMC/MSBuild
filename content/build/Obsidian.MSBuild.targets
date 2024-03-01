@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
-	<Target Name="PackPlugin" Condition="'$(Configuration)' == 'Release'" AfterTargets="AfterBuild;Publish">
+	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
 		<MakeDir Directories="$(PluginPublishDir)"/>
 		
 		<Pack PluginAssembly="$(PluginAssembly)" PluginVersion="$(PluginVersion)"
