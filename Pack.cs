@@ -84,6 +84,8 @@ namespace Obsidian.MSBuild
 
         public override bool Execute()
         {
+            const int headerSize = 436;
+
             this.Log.LogMessage(MessageImportance.High, "------ Starting Plugin Packer ------");
             var files = Directory.GetFiles(this.PluginPublishDir)
                 .Select(x => new FileInfo(x));
@@ -112,7 +114,7 @@ namespace Obsidian.MSBuild
                 this.Log.LogMessage(MessageImportance.High, "Header and ApiVersion written.");
 
                 var preHeaderStartPos = fs.Position;
-                writer.Write(new byte[408]);
+                writer.Write(new byte[headerSize]);
 
                 var dataStartPos = fs.Position;
 
