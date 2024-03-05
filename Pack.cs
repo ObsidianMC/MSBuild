@@ -112,7 +112,7 @@ namespace Obsidian.MSBuild
                 this.Log.LogMessage(MessageImportance.High, "Header and ApiVersion written.");
 
                 var preHeaderStartPos = fs.Position;
-                writer.Write(new byte[280]);
+                writer.Write(new byte[408]);
 
                 var dataStartPos = fs.Position;
 
@@ -154,17 +154,18 @@ namespace Obsidian.MSBuild
                     using (var rsa = AsymmetricAlgorithm.Create("RSA"))
                     {
                         rsa.FromXmlString(this.PluginSigningKey);
-
                         var formatter = new RSAPKCS1SignatureFormatter(rsa);
 
                         formatter.SetHashAlgorithm("SHA1");
                         var sig = formatter.CreateSignature(hash);
 
+                        this.Log.LogMessage(MessageImportance.High, "Signature length: {0}", sig.Length);
                         writer.Write(sig);
                     }
                 }
                 else
                 {
+                    this.Log.LogMessage(MessageImportance.High, "No signature.");
                     fs.Seek(256, SeekOrigin.Current);
                 }
 

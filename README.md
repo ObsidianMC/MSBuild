@@ -15,12 +15,20 @@ Install the package.
 Open up your csproj and make sure you have this in either a new or exisiting PropertGroup.
 
 ```csproj
-<PropertyGroup Name="PackPlugin" AfterTargets="Publish">
-    <PublishDir>$(PublishUrl)</PublishDir> <!-- this would usually be your publish directory. -->
-    <PluginApiVersion>{{Obsidian.API VERSION}}</PluginApiVersion> <!-- this would be the Obsidian.API version -->
-    <PluginName>{{YOUR PLUGIN NAME}}</PluginName>
+<PropertyGroup>
+
+    <!-- this would usually be your publish directory. -->
+    <PublishDir>$(PublishUrl)</PublishDir> 
+
+    <!-- this would be the Obsidian.API version -->
+    <PluginApiVersion>{{Obsidian.API VERSION}}</PluginApiVersion> 
+
+    <PluginAssembly>{{YOUR PLUGIN ASSEMBLY}}</PluginAssembly>
     <PluginVersion>{{YOUR PLUGIN VERSION}}</PluginVersion>
-    <PluginSigningKey>{{YOUR SIGNING KEY}}</PluginSigningKey> <!-- this is optional. used for signing plugins. -->
+
+    <!-- this is optional. used for signing plugins. must be in xmlformat and can be a file or just a direct value -->
+    <PluginSigningKey>{{YOUR SIGNING KEY}}</PluginSigningKey> 
+
 </PropertyGroup>
 ```
 
