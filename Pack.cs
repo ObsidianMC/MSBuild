@@ -137,7 +137,10 @@ namespace Obsidian.MSBuild
 
                 // set the hash
                 fs.Position = dataStartPos;
-                var hash = SHA1.Create().ComputeHash(fs);
+                byte[] hash;
+
+                using (var sha384 = SHA384.Create())
+                    hash = sha384.ComputeHash(fs);
 
                 this.Log.LogMessage(MessageImportance.High, "Packed Hash: ({0})",
                     BitConverter.ToString(hash).Replace("-", string.Empty));
@@ -147,16 +150,16 @@ namespace Obsidian.MSBuild
 
                 if (!string.IsNullOrEmpty(this.PluginSigningKey))
                 {
-                    if(File.Exists(this.PluginSigningKey))
+                    if (File.Exists(this.PluginSigningKey))
                         this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
 
                     //Write signature if there's a key
-                    using (var rsa = AsymmetricAlgorithm.Create("RSA"))
+                    using (var rsa = RSA.Create())
                     {
                         rsa.FromXmlString(this.PluginSigningKey);
                         var formatter = new RSAPKCS1SignatureFormatter(rsa);
 
-                        formatter.SetHashAlgorithm("SHA1");
+                        formatter.SetHashAlgorithm("SHA384");
                         var sig = formatter.CreateSignature(hash);
 
                         this.Log.LogMessage(MessageImportance.High, "Signature length: {0}", sig.Length);
@@ -166,7 +169,7 @@ namespace Obsidian.MSBuild
                 else
                 {
                     this.Log.LogMessage(MessageImportance.High, "No signature.");
-                    fs.Seek(256, SeekOrigin.Current);
+                    fs.Seek(384, SeekOrigin.Current);
                 }
 
                 // write data length after hash
