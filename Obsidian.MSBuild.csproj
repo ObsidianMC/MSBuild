@@ -7,7 +7,6 @@
 		<AssemblyName>Obsidian.MSBuild</AssemblyName>
 		<RootNamespace>Obsidian.MSBuild</RootNamespace>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Version>1.0.0</Version>
 		<Authors>Obsidian Team</Authors>
 		<Company>Obsidian Team</Company>
 		<Product>Obsidian</Product>
@@ -17,7 +16,6 @@
 		<PackageTags>minecraft obsidian msbuild plugin plugins pluginpacking</PackageTags>
 		<PackageIconUrl>https://i.imgur.com/jU1lkP4.png</PackageIconUrl>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
-		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<NoWarn>1591</NoWarn>
 		<Title>Obsidian MSBuild</Title>
@@ -37,8 +35,8 @@
 		<GenerateDependencyFile>true</GenerateDependencyFile>
 	</PropertyGroup>
 
-
 	<ItemGroup>
+		<PackageReference Include="Nerdbank.GitVersioning" Version="17.9.5" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.Build.Framework" Version="17.9.5" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.9.5" PrivateAssets="all" ExcludeAssets="Runtime" />
 	</ItemGroup>
@@ -63,28 +61,18 @@
 	</ItemGroup>
 
 	<!-- This is the target we defined above. It's purpose is to add all of our PackageReference and ProjectReference's runtime assets to our package output.  -->
-	<Target
-		Name="CopyProjectReferencesToPackage"
-		DependsOnTargets="ResolveReferences">
+	<Target Name="CopyProjectReferencesToPackage" DependsOnTargets="ResolveReferences">
 		<ItemGroup>
 			<!-- The TargetPath is the path inside the package that the source file will be placed. This is already precomputed in the ReferenceCopyLocalPaths items' DestinationSubPath, so reuse it here. -->
-			<BuildOutputInPackage
-				Include="@(ReferenceCopyLocalPaths)"
-				TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
+			<BuildOutputInPackage Include="@(ReferenceCopyLocalPaths)" TargetPath="%(ReferenceCopyLocalPaths.DestinationSubPath)" />
 		</ItemGroup>
 	</Target>
 
 	<!-- This target adds the generated deps.json file to our package output -->
-	<Target
-			Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput"
-			BeforeTargets="BuiltProjectOutputGroup"
-			Condition=" '$(GenerateDependencyFile)' == 'true'">
+	<Target Name="AddBuildDependencyFileToBuiltProjectOutputGroupOutput" BeforeTargets="BuiltProjectOutputGroup" Condition=" '$(GenerateDependencyFile)' == 'true'">
 
 		<ItemGroup>
-			<BuiltProjectOutputGroupOutput
-				Include="$(ProjectDepsFilePath)"
-				TargetPath="$(ProjectDepsFileName)"
-				FinalOutputPath="$(ProjectDepsFilePath)" />
+			<BuiltProjectOutputGroupOutput Include="$(ProjectDepsFilePath)" TargetPath="$(ProjectDepsFileName)" FinalOutputPath="$(ProjectDepsFilePath)" />
 		</ItemGroup>
 	</Target>
-</Project>
+</Project> 
