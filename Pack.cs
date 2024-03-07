@@ -84,7 +84,7 @@ namespace Obsidian.MSBuild
 
         public override bool Execute()
         {
-            const int headerSize = 436;
+            const int headerSize = 437;
 
             this.Log.LogMessage(MessageImportance.High, "------ Starting Plugin Packer ------");
             var files = Directory.GetFiles(this.PluginPublishDir)
@@ -150,7 +150,11 @@ namespace Obsidian.MSBuild
                 fs.Position = preHeaderStartPos;
                 writer.Write(hash);
 
-                if (!string.IsNullOrEmpty(this.PluginSigningKey))
+                var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
+
+                writer.Write(shouldSign);
+
+                if (shouldSign)
                 {
                     if (File.Exists(this.PluginSigningKey))
                         this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
@@ -171,6 +175,7 @@ namespace Obsidian.MSBuild
                 else
                 {
                     this.Log.LogMessage(MessageImportance.High, "No signature.");
+
                     fs.Seek(384, SeekOrigin.Current);
                 }
 
