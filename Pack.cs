@@ -84,7 +84,9 @@ namespace Obsidian.MSBuild
 
         public override bool Execute()
         {
-            const int headerSize = 437;
+            var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
+
+            var headerSize = shouldSign ? 437 : 53;
 
             this.Log.LogMessage(MessageImportance.High, "------ Starting Plugin Packer ------");
             var files = Directory.GetFiles(this.PluginPublishDir)
@@ -150,8 +152,6 @@ namespace Obsidian.MSBuild
                 fs.Position = preHeaderStartPos;
                 writer.Write(hash);
 
-                var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
-
                 writer.Write(shouldSign);
 
                 if (shouldSign)
@@ -175,8 +175,6 @@ namespace Obsidian.MSBuild
                 else
                 {
                     this.Log.LogMessage(MessageImportance.High, "No signature.");
-
-                    fs.Seek(384, SeekOrigin.Current);
                 }
 
                 // write data length after hash
