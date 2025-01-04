@@ -86,6 +86,17 @@ namespace Obsidian.MSBuild
         {
             var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
 
+            if (!shouldSign)
+            {
+                // check if signing key is in ENV variables
+                var envKey = Environment.GetEnvironmentVariable("OBSIDIAN_SIGNING_KEY");
+                if (!string.IsNullOrEmpty(envKey))
+                {
+                    this.PluginSigningKey = envKey;
+                    shouldSign = true;
+                }
+            }
+
             var headerSize = shouldSign ? 437 : 53;
 
             this.Log.LogMessage(MessageImportance.High, "------ Starting Plugin Packer ------");
