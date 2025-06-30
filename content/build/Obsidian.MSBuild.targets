@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8" ?>
-<Project>
-	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
-		<MakeDir Directories="$(PluginPublishDir)"/>
-		
-		<Pack PluginAssembly="$(PluginAssembly)" PluginVersion="$(PluginVersion)"
-			  PluginPublishDir="$(PluginPublishDir)" PluginApiVersion="$(PluginApiVersion)" PluginSigningKey="$(PluginSigningKey)"/>
-	</Target>
-</Project>

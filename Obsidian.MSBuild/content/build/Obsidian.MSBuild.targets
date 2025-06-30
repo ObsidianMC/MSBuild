@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project>
+	<AppSettingStronglyTyped_TFM Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net9.0</AppSettingStronglyTyped_TFM>
+
+	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
+		<MakeDir Directories="$(PluginPublishDir)"/>
+
+		<Pack PluginAssembly="$(AssemblyName)" PluginVersion="$(Version)" Authors="$(Authors)"
+			  PluginPublishDir="$(PluginPublishDir)" PluginApiVersion="$(PluginApiVersion)"
+			  PluginSigningKey="$(PluginSigningKey)" PluginDependencies="@(PluginDependency)"
+			  PluginId="$(PluginId)"
+			  PluginDescription="$(Description)" />
+	</Target>
+</Project>
