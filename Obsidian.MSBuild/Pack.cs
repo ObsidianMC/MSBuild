@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -96,6 +97,7 @@ namespace Obsidian.MSBuild
             {
                 writer.Write(dependency.Id);
                 writer.Write(dependency.Version);
+                writer.Write(dependency.Required);
             }
 
             var hashAndSignatureStartPos = fs.Position;
@@ -183,13 +185,16 @@ namespace Obsidian.MSBuild
                 var id = dependency.GetMetadata("Id");
                 var version = dependency.GetMetadata("Version");
 
+                var requiredMetadata = dependency.GetMetadata("Required");
+                var required = !string.IsNullOrEmpty(requiredMetadata) && bool.Parse(requiredMetadata);
+
                 if (string.IsNullOrEmpty(id))
                 {
                     this.Log.LogWarning("Id is required when defining a dependency.");
                     continue;
                 }
 
-                dependencies[i] = new PluginDependency(id, version ?? ">=1.0");
+                dependencies[i] = new PluginDependency(id, version ?? ">=1.0", required);
             }
 
             return dependencies;
@@ -230,11 +235,13 @@ namespace Obsidian.MSBuild
             });
         }
 
-        private readonly struct PluginDependency(string id, string version)
+        private readonly struct PluginDependency(string id, string version, bool required)
         {
             public string Id { get; } = id;
 
             public string Version { get; } = version;
+
+            public bool Required { get; } = required;
         }
 
         private sealed class Entry
