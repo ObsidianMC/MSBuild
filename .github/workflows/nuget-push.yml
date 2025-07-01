@@ -23,11 +23,12 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            8
-            7
+            9.0.x
+            8.0.x
+            7.0.x
       - name: Pack n Push
         run: |
           dotnet build -c Release
