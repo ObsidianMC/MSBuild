@@ -79,6 +79,13 @@ public class PackTest
             var authors = reader.ReadString();
             var description = reader.ReadString();
 
+            var dependencies = new List<PluginDependency>();
+            var dependsLength = reader.ReadInt32();
+            for(int i = 0; i < dependsLength; i++)
+            {
+                dependencies.Add(new(reader.ReadString(), reader.ReadString(), reader.ReadBoolean()));
+            }
+
             var hash = reader.ReadBytes(SHA384.HashSizeInBytes);
             var signed = reader.ReadBoolean();
             var dataLength = reader.ReadInt32();
@@ -94,6 +101,7 @@ public class PackTest
             Assert.AreEqual("obsidianteam.mysampleplugin", id);
             Assert.AreEqual("ObsidianTeam", authors);
             Assert.AreEqual("No description provided", description);
+            Assert.AreEqual(0, dependencies.Count);
 
             Console.WriteLine($"Hash: {Convert.ToHexString(hash)}");
             Console.WriteLine($"Data Length: {dataLength}");

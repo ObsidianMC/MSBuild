@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Resources;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -35,6 +34,8 @@ namespace Obsidian.MSBuild
 
         [Required]
         public required string PluginId { get; set; }
+
+        public string? ProjectUrl { get; set; }
 
         public string? PluginDescription { get; set; }
 
@@ -90,6 +91,7 @@ namespace Obsidian.MSBuild
             writer.Write(this.PluginId);
             writer.Write(this.PluginAuthors);
             writer.Write(this.PluginDescription ?? "No description provided");
+            writer.Write(this.ProjectUrl ?? "No project url");
 
             writer.Write(dependencies.Length);
 
@@ -235,15 +237,6 @@ namespace Obsidian.MSBuild
             });
         }
 
-        private readonly struct PluginDependency(string id, string version, bool required)
-        {
-            public string Id { get; } = id;
-
-            public string Version { get; } = version;
-
-            public bool Required { get; } = required;
-        }
-
         private sealed class Entry
         {
             public string Name { get; set; }
@@ -259,3 +252,4 @@ namespace Obsidian.MSBuild
 
     }
 }
+
