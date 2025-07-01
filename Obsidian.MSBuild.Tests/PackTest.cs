@@ -4,7 +4,7 @@ using Moq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Obsidian.MSBuild.Test;
+namespace Obsidian.MSBuild.Tests;
 
 [TestClass]
 public class PackTest
@@ -32,7 +32,8 @@ public class PackTest
             PluginVersion = "1.0.0",
             PluginPublishDir = ".\\Resources\\",
             PluginDependencies = [],
-            BuildEngine = this.buildEngine.Object
+            BuildEngine = this.buildEngine.Object,
+            PluginName = "My Sample Plugin"
         };
 
         var success = packTask.Execute();
@@ -55,7 +56,8 @@ public class PackTest
             PluginVersion = "1.0.0",
             PluginPublishDir = ".\\Resources\\",
             PluginDependencies = [],
-            BuildEngine = this.buildEngine.Object
+            BuildEngine = this.buildEngine.Object,
+            PluginName = "My Sample Plugin"
         };
 
         var success = packTask.Execute();
@@ -63,38 +65,42 @@ public class PackTest
         Assert.IsTrue(success);
         Assert.IsTrue(File.Exists(packTask.PackedFile));
 
-        using var file = File.OpenRead(packTask.PackedFile);
-        using var reader = new BinaryReader(file);
+        using (var file = File.OpenRead(packTask.PackedFile))
+        {
+            using var reader = new BinaryReader(file);
 
-        var headerId = Encoding.ASCII.GetString(reader.ReadBytes(4));
-        var apiVersion = reader.ReadString();
-        
-        var assemblyName = reader.ReadString();
-        var version = reader.ReadString();
-        var id = reader.ReadString();
-        var authors = reader.ReadString();
-        var description = reader.ReadString();
+            var headerId = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            var apiVersion = reader.ReadString();
 
-        var hash = reader.ReadBytes(SHA384.HashSizeInBytes);
-        var signed = reader.ReadBoolean();
-        var dataLength = reader.ReadInt32();
-        var entryCount = reader.ReadInt32();
+            var assemblyName = reader.ReadString();
+            var version = reader.ReadString();
+            var name = reader.ReadString();
+            var id = reader.ReadString();
+            var authors = reader.ReadString();
+            var description = reader.ReadString();
 
-        Assert.AreEqual("OBBY", headerId);
-        Assert.AreEqual("1.0.0", apiVersion);
+            var hash = reader.ReadBytes(SHA384.HashSizeInBytes);
+            var signed = reader.ReadBoolean();
+            var dataLength = reader.ReadInt32();
+            var entryCount = reader.ReadInt32();
 
-        Assert.AreEqual("MySamplePluginTemplate", assemblyName);
-        Assert.AreEqual("1.0.0", version);
+            Assert.AreEqual("OBBY", headerId);
+            Assert.AreEqual("1.0.0", apiVersion);
 
-        Assert.AreEqual("obsidianteam.mysampleplugin", id);
-        Assert.AreEqual("ObsidianTeam", authors);
-        Assert.AreEqual("No description provided", description);
+            Assert.AreEqual("MySamplePluginTemplate", assemblyName);
+            Assert.AreEqual("1.0.0", version);
 
-        Console.WriteLine($"Hash: {Convert.ToHexString(hash)}");
-        Console.WriteLine($"Data Length: {dataLength}");
-        
-        Assert.IsFalse(signed);
-        Assert.AreEqual(9, entryCount);
+            Assert.AreEqual("My Sample Plugin", name);
+            Assert.AreEqual("obsidianteam.mysampleplugin", id);
+            Assert.AreEqual("ObsidianTeam", authors);
+            Assert.AreEqual("No description provided", description);
+
+            Console.WriteLine($"Hash: {Convert.ToHexString(hash)}");
+            Console.WriteLine($"Data Length: {dataLength}");
+
+            Assert.IsFalse(signed);
+            Assert.AreEqual(9, entryCount);
+        }
 
         File.Delete(packTask.PackedFile);
     }
