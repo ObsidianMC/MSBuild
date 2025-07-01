@@ -90,6 +90,14 @@ namespace Obsidian.MSBuild
             writer.Write(this.PluginAuthors);
             writer.Write(this.PluginDescription ?? "No description provided");
 
+            writer.Write(dependencies.Length);
+
+            foreach(var dependency in dependencies)
+            {
+                writer.Write(dependency.Id);
+                writer.Write(dependency.Version);
+            }
+
             var hashAndSignatureStartPos = fs.Position;
             writer.Write(new byte[headerSize]);
 
