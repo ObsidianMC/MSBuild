@@ -9,6 +9,7 @@
 			  PluginPublishDir="$(PluginPublishDir)" PluginApiVersion="$(PluginApiVersion)"
 			  PluginSigningKey="$(PluginSigningKey)" PluginDependencies="@(PluginDependency)"
 			  PluginId="$(PluginId)"
-			  PluginDescription="$(Description)" />
+			  PluginDescription="$(Description)"
+			  PluginName="$(Title)" ProjectUrl="$(ProjectUrl)" />
 	</Target>
 </Project>
