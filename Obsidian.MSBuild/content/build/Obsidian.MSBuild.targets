@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
-	<ObsidianMSBuild_TFM Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net9.0</ObsidianMSBuild_TFM>
-	<ObsidianMSBuild_TFM Condition=" '$(MSBuildRuntimeType)' != 'Core' ">netstandard2.0</ObsidianMSBuild_TFM>
+	<PropertyGroup>
+		<ObsidianMSBuild_TFM Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net9.0</ObsidianMSBuild_TFM>
+		<ObsidianMSBuild_TFM Condition=" '$(MSBuildRuntimeType)' != 'Core' ">netstandard2.0</ObsidianMSBuild_TFM>
+	</PropertyGroup>
 	
 	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
 		<MakeDir Directories="$(PluginPublishDir)"/>
