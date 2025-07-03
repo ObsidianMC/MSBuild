@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
-	<AppSettingStronglyTyped_TFM Condition=" '$(MSBuildRuntimeType)' == 'Core' ">net9.0</AppSettingStronglyTyped_TFM>
-
 	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
 		<MakeDir Directories="$(PluginPublishDir)"/>
 
