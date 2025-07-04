@@ -34,6 +34,7 @@
 		<!-- Suppress NuGet warning NU5128. -->
 		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 		<GenerateDependencyFile>true</GenerateDependencyFile>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<ItemGroup>
