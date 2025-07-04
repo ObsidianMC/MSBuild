@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>netstandard2.0</TargetFramework>
 
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<AssemblyName>Obsidian.MSBuild</AssemblyName>
@@ -21,7 +21,6 @@
 		<Title>Obsidian MSBuild</Title>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<Nullable>annotations</Nullable>
 
 		<!-- This target will run when MSBuild is collecting the files to be packaged, and we'll implement it below. This property controls the dependency list for this packaging process, so by adding our custom property we hook ourselves into the process in a supported way. -->
 		<TargetsForTfmSpecificBuildOutput>
@@ -42,6 +41,7 @@
 		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" PrivateAssets="all" ExcludeAssets="Runtime">
 		  <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
 	</ItemGroup>
 
 	<ItemGroup>
