@@ -235,9 +235,9 @@ namespace Obsidian.MSBuild
 
             var currentLength = data.Length;
 
-            this.Log.LogMessage(MessageImportance.Low, $"------ Packing {file.Name} ------");
+            this.Log.LogMessage( $"------ Packing {file.Name} ------");
 
-            this.Log.LogMessage(MessageImportance.Low, $"Current file length: {currentLength}.");
+            this.Log.LogMessage($"Current file length: {currentLength}.");
 
             if (currentLength > MinCompressionSize)
             {
@@ -251,7 +251,7 @@ namespace Obsidian.MSBuild
                     if (compressedData.Length < currentLength * CompressionTradeoff)
                     {
                         data = compressedData;
-                        this.Log.LogMessage(MessageImportance.Low, $"Compressed length: {compressedData.Length}.");
+                        this.Log.LogMessage($"Compressed length: {compressedData.Length}.");
                     }
                 }
             }
