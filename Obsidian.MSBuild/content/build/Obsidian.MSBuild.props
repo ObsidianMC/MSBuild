@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
 	<PropertyGroup>
-		<TaskFolder>$(MSBuildThisFileDirectory)..\tasks\net9.0</TaskFolder>
-		<ObsidianTaskAssembly>$(TaskFolder)\$(MSBuildThisFileName).dll</ObsidianTaskAssembly>
+		<ObsidianMSBuild_TaskFolder>$(MSBuildThisFileDirectory)..\tasks\net9.0</ObsidianMSBuild_TaskFolder>
+		<ObsidianTaskAssembly>$(ObsidianMSBuild_TaskFolder)\$(MSBuildThisFileName).dll</ObsidianTaskAssembly>
 	</PropertyGroup>
 
 	<UsingTask TaskName="$(MSBuildThisFileName).Pack" AssemblyFile="$(ObsidianTaskAssembly)" />
