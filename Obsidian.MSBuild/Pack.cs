@@ -55,9 +55,9 @@ namespace Obsidian.MSBuild
         [Output]
         public string PackedFile { get; set; }
 
-        private void WriteLine(string message, params object[] args)
+        private void WriteLine(MessageImportance importance, string message, params object[] args)
         {
-            this.Log.LogMessage(message, args);
+            this.Log.LogMessage(importance, message, args);
             Console.WriteLine(message, args);
         }
 
@@ -70,10 +70,10 @@ namespace Obsidian.MSBuild
             //+5 to account for the boolean and data length
             var headerSize = shouldSign ? baseHeaderSize + 9 : HashSizeInBytes + 5;
 
-            this.WriteLine("------ Starting Plugin Packer ------");
+            this.WriteLine(MessageImportance.High, "------ Starting Plugin Packer ------");
             var files = Directory.GetFiles(this.PluginPublishDir).Select(x => new FileInfo(x));
 
-            this.WriteLine("Gathering entries...");
+            this.WriteLine(MessageImportance.High, "Gathering entries...");
             var entries = new List<Entry>();
             foreach (var file in files)
             {
@@ -83,7 +83,7 @@ namespace Obsidian.MSBuild
                 this.Add(entries, file);
             }
 
-            this.WriteLine("Entries gathered. Starting packing process..");
+            this.WriteLine(MessageImportance.High, "Entries gathered. Starting packing process..");
 
             var filePath = Path.Combine(this.PluginPublishDir, $"{this.PluginAssembly}.obby");
             if (File.Exists(filePath))
@@ -121,7 +121,7 @@ namespace Obsidian.MSBuild
                         writer.Write(dependency.Required);
                     }
 
-                    this.WriteLine("Writing entry headers. ({0})", entries.Count);
+                    this.WriteLine(MessageImportance.High, "Writing entry headers. ({0})", entries.Count);
                     writer.Write(entries.Count);
 
                     foreach (var entry in entries)
@@ -132,7 +132,7 @@ namespace Obsidian.MSBuild
                         writer.Write(entry.CompressedLength);
                     }
 
-                    this.WriteLine("Writing entries. ({0})", entries.Count);
+                    this.WriteLine(MessageImportance.High, "Writing entries. ({0})", entries.Count);
                     foreach (var entry in entries)
                         writer.Write(entry.Data);
 
@@ -146,8 +146,8 @@ namespace Obsidian.MSBuild
                     fs.Position = hashAndSignatureStartPos;
                     writer.Write(hash);
 
-                    this.WriteLine("Hash: {0}", BitConverter.ToString(hash).Replace("-", string.Empty));
-                    this.WriteLine("Hash Length: {0}", hash.Length);
+                    this.WriteLine(MessageImportance.High, "Hash: {0}", BitConverter.ToString(hash).Replace("-", string.Empty));
+                    this.WriteLine(MessageImportance.High, "Hash Length: {0}", hash.Length);
 
                     writer.Write(shouldSign);
                     if (shouldSign)
@@ -167,22 +167,22 @@ namespace Obsidian.MSBuild
 
                             var sig = signer.GenerateSignature();
 
-                            this.WriteLine("Signature length: {0}", sig.Length);
+                            this.WriteLine(MessageImportance.High, "Signature length: {0}", sig.Length);
                             writer.Write(sig.Length);
                             writer.Write(sig);
                         }
                     }
                     else
                     {
-                        this.WriteLine("No signature.");
+                        this.WriteLine(MessageImportance.High, "No signature.");
                     }
 
                     // write data length after hash
                     var dataLength = (int)(fs.Length - hashAndSignatureStartPos);
-                    this.WriteLine("Data Length: ({0})", dataLength);
+                    this.WriteLine(MessageImportance.High, "Data Length: ({0})", dataLength);
                     writer.Write(dataLength);
 
-                    this.WriteLine("Plugin successfully packed at {0}", filePath);
+                    this.WriteLine(MessageImportance.High, "Plugin successfully packed at {0}", filePath);
                 }
             }
 
@@ -235,9 +235,9 @@ namespace Obsidian.MSBuild
 
             var currentLength = data.Length;
 
-            this.Log.LogMessage(MessageImportance.High, $"------ Packing {file.Name} ------");
+            this.Log.LogMessage(MessageImportance.Low, $"------ Packing {file.Name} ------");
 
-            this.Log.LogMessage(MessageImportance.High, $"Current file length: {currentLength}.");
+            this.Log.LogMessage(MessageImportance.Low, $"Current file length: {currentLength}.");
 
             if (currentLength > MinCompressionSize)
             {
@@ -251,7 +251,7 @@ namespace Obsidian.MSBuild
                     if (compressedData.Length < currentLength * CompressionTradeoff)
                     {
                         data = compressedData;
-                        this.Log.LogMessage(MessageImportance.High, $"Compressed length: {compressedData.Length}.");
+                        this.Log.LogMessage(MessageImportance.Low, $"Compressed length: {compressedData.Length}.");
                     }
                 }
             }
