@@ -1,6 +1,6 @@
 ﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
 using System;
@@ -55,26 +55,35 @@ namespace Obsidian.MSBuild
         [Output]
         public string PackedFile { get; set; }
 
+        private void WriteLine(string message, params object[] args)
+        {
+            this.Log.LogMessage(message, args);
+            Console.WriteLine(message, args);
+        }
+
         public override bool Execute()
         {
             var dependencies = this.BuildDependencies();
             var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
 
+            var baseHeaderSize = HashSizeInBytes + 128;
             //+5 to account for the boolean and data length
-            var headerSize = (shouldSign ? HashSizeInBits + HashSizeInBytes : HashSizeInBytes) + 5;
+            var headerSize = shouldSign ? baseHeaderSize + 9 : HashSizeInBytes + 5;
 
-            this.Log.LogMessage("------ Starting Plugin Packer ------");
+            this.WriteLine("------ Starting Plugin Packer ------");
             var files = Directory.GetFiles(this.PluginPublishDir).Select(x => new FileInfo(x));
 
-            this.Log.LogMessage("Gathering entries...");
+            this.WriteLine("Gathering entries...");
             var entries = new List<Entry>();
-
             foreach (var file in files)
             {
+                if (file.Name.StartsWith("testhost") || file.Name == $"{this.PluginAssembly}.obby")
+                    continue;//Skip testhost files
+
                 this.Add(entries, file);
             }
 
-            this.Log.LogMessage("Entries gathered. Starting packing process..");
+            this.WriteLine("Entries gathered. Starting packing process..");
 
             var filePath = Path.Combine(this.PluginPublishDir, $"{this.PluginAssembly}.obby");
             if (File.Exists(filePath))
@@ -84,12 +93,16 @@ namespace Obsidian.MSBuild
 
             using (var fs = new FileStream(filePath, FileMode.CreateNew))
             {
+
                 using (var writer = new BinaryWriter(fs))
                 {
                     writer.Write(Encoding.ASCII.GetBytes("OBBY"));
-
                     writer.Write(this.PluginApiVersion);
 
+                    var hashAndSignatureStartPos = fs.Position;
+                    writer.Write(new byte[headerSize]);
+
+                    var dataPos = fs.Position;
                     writer.Write(this.PluginAssembly);
                     writer.Write(this.PluginVersion);
 
@@ -108,10 +121,7 @@ namespace Obsidian.MSBuild
                         writer.Write(dependency.Required);
                     }
 
-                    var hashAndSignatureStartPos = fs.Position;
-                    writer.Write(new byte[headerSize]);
-
-                    this.Log.LogMessage("Writing entry headers. ({0})", entries.Count);
+                    this.WriteLine("Writing entry headers. ({0})", entries.Count);
                     writer.Write(entries.Count);
 
                     foreach (var entry in entries)
@@ -122,18 +132,22 @@ namespace Obsidian.MSBuild
                         writer.Write(entry.CompressedLength);
                     }
 
-                    this.Log.LogMessage("Writing entries. ({0})", entries.Count);
+                    this.WriteLine("Writing entries. ({0})", entries.Count);
                     foreach (var entry in entries)
                         writer.Write(entry.Data);
 
                     // set the hash
-                    fs.Position = hashAndSignatureStartPos;
+                    fs.Position = dataPos;
                     byte[] hash;
 
                     using (var sha384 = SHA384.Create())
                         hash = sha384.ComputeHash(fs);
 
+                    fs.Position = hashAndSignatureStartPos;
                     writer.Write(hash);
+
+                    this.WriteLine("Hash: {0}", BitConverter.ToString(hash).Replace("-", string.Empty));
+                    this.WriteLine("Hash Length: {0}", hash.Length);
 
                     writer.Write(shouldSign);
                     if (shouldSign)
@@ -141,33 +155,34 @@ namespace Obsidian.MSBuild
                         if (File.Exists(this.PluginSigningKey))
                             this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
 
-                        var signer = SignerUtilities.GetSigner("SHA384withECDSA");
-                        using (var reader = new StreamReader(this.PluginSigningKey))
+                        var signer = SignerUtilities.GetSigner("SHA384WITHRSA");
+                        using (var reader = new StringReader(this.PluginSigningKey))
                         {
                             var pemReader = new PemReader(reader);
-                            var keyPair = (AsymmetricCipherKeyPair)pemReader.ReadObject();
+                            var keyPair = (RsaPrivateCrtKeyParameters)pemReader.ReadObject();
 
-                            signer.Init(true, keyPair.Private);
+                            signer.Init(true, keyPair);
 
                             signer.BlockUpdate(hash, 0, hash.Length);
 
                             var sig = signer.GenerateSignature();
 
-                            this.Log.LogMessage("Signature length: {0}", sig.Length);
+                            this.WriteLine("Signature length: {0}", sig.Length);
+                            writer.Write(sig.Length);
                             writer.Write(sig);
                         }
                     }
                     else
                     {
-                        this.Log.LogMessage("No signature.");
+                        this.WriteLine("No signature.");
                     }
 
                     // write data length after hash
                     var dataLength = (int)(fs.Length - hashAndSignatureStartPos);
-                    this.Log.LogMessage("Data Length: ({0})", dataLength);
+                    this.WriteLine("Data Length: ({0})", dataLength);
                     writer.Write(dataLength);
 
-                    this.Log.LogMessage("Plugin successfully packed at {0}", filePath);
+                    this.WriteLine("Plugin successfully packed at {0}", filePath);
                 }
             }
 
