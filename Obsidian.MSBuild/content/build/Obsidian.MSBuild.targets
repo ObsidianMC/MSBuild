@@ -3,7 +3,7 @@
 	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
 		<MakeDir Directories="$(PluginPublishDir)"/>
 
-		<Pack PluginAssembly="$(AssemblyName)" PluginVersion="$(Version)" Authors="$(Authors)"
+		<Pack PluginAssembly="$(AssemblyName)" PluginVersion="$(Version)" PluginAuthors="$(Authors)"
 			  PluginPublishDir="$(PluginPublishDir)" PluginApiVersion="$(PluginApiVersion)"
 			  PluginSigningKey="$(PluginSigningKey)" PluginDependencies="@(PluginDependency)"
 			  PluginId="$(PluginId)"
