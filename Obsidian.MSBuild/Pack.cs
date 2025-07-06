@@ -1,5 +1,6 @@
 ﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
@@ -66,7 +67,7 @@ namespace Obsidian.MSBuild
             var dependencies = this.BuildDependencies();
             var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
 
-            var baseHeaderSize = HashSizeInBytes + 128;
+            var baseHeaderSize = HashSizeInBytes + HashSizeInBits;
             //+5 to account for the boolean and data length
             var headerSize = shouldSign ? baseHeaderSize + 9 : HashSizeInBytes + 5;
 

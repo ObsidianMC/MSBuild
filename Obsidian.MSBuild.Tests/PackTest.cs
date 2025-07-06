@@ -12,23 +12,67 @@ public class PackTest
     private Mock<IBuildEngine> buildEngine;
     private List<BuildErrorEventArgs> errors;
 
+    /// <summary>
+    /// THESE ARE RANDOMLY GENERATED KEYS NOT USED FOR ANYTHING IMPORTANT
+    /// </summary>
     private const string PrivateKey = """
         -----BEGIN PRIVATE KEY-----
-        MIICdQIBADANBgkqhkiG9w0BAQEFAASCAl8wggJbAgEAAoGBAMU/F0sTHCUeJL3U
-        /rnmcTGQpSdGQrfaAEOTdVZlaNskLL1QyQUi+ejbiFhisDDr2w6yFJCtQ8f717cn
-        mHLzf3tOZtnLCz5cRcABkNu+9XOPBUpHt+VV445NlpbraWZKEmsXZgJ0yv/jBv8i
-        HoGIPyvODmn19kbVH0ODOvcVTLmTAgMBAAECgYALC6tsQteypGt+Te0tz9/K3MTC
-        3EZkMUsOfbV2bxteGjp/J4T6SqkgBxsth+lB9BNCUWqhZ3KCQnIkCY2Z8lTTI7My
-        dVgFhO2ch8mEsNlcCH3ZY1HmOzdmO8scExlSE9X4ZgThpCrvE6FRpaIbHnRVko2S
-        +AJJsuznlpHcjuE7gQJBAOl+oWLCdCcJFMUS1ruSyTtU7HO/Vwu/gqumrpxBtIDX
-        CSJHq71+PL3yfSZ/SXxRSC0X+HI3CcK8DrG4joOOUrMCQQDYQg2uAXC3Ug02xNtp
-        6+GVREFJWSCyYVQYJcRw0ayu3H/z6cRv1LKA/UKUQzrMNic6n0iHJaiwRS0K4t7S
-        We2hAkAK8PshBJmqxpspjPNxALTbSeR2nA25KDU4U+w0uEN8EheEerVKgOLZx8Yj
-        iq1n3Osz6b6jo36amHNb0pkjAwVPAkASBf9J30jbnnUHeYSn4Ubdv+CJEmqNM1tk
-        39DtbiwsLqhjVbpPb7So13KzFJ9T4beHRTswOE1E058bZykW8vPBAkB8OQ4TbQRs
-        oTBYOAc/F4JVGrqma04CjEPUn4J/5qzSScI8hkImfJvtZk8Dd8lQ/wpb94KTfWwR
-        4IiXOmwPm/Zt
+        MIIG/QIBADANBgkqhkiG9w0BAQEFAASCBucwggbjAgEAAoIBgQCUJAAwPuZ2bm1E
+        DdM/4fWwWTZT0Ba+vCKtBGWzpv3Bq68rEFBU0wnh2EOdazm2lBFZt60S904qhUpg
+        nI3mlYBI71GmIJyXk8lo14IhOEIjRlDezA+51kg6IBNDpr7hD4C+ta5Yi7vKjGtk
+        6sXTT8C2xurWPJNUmUzu8OTQfNemoXcTDs/FtQfiixTuMQ7zM5EWmNUiwp6cas2a
+        NqdDY2/E/06VO7SQaHwAtlWyIqB0FJZgqMe/W4JmZHC7yA3N2QbXgiva8R6cja6Q
+        kmA7jHcHz5r2z/iZNXroiga34iIk1AA36CxSNB/wyxxuO8a9cUwrdOSwM9zxLMFC
+        VhL6sSOAcGdKu+ly8785ffgQD88X3fm4TA/2zcHUs3CISvXOfLynpIx9eEMlJar8
+        d/MFpJn9CN62RqrFigYXzV8uUJOCPyaFeZKQk//mqMSmpKoITcyx2e4cuNHdBRRs
+        +vo9fQARiIymLrKls/kwxqcWq6FgQTAHc5p8FY4nrH7tyM+BAiECAwEAAQKCAYBm
+        47I10BolO4EseSW2AuyvtOakw6xogSbcYGd6pYstjl61XDlPENyWPayIk0acZq6+
+        T3In8BgcNEN6YoG0GzXkckOVTKU2KfEDnlrFU9urwFS+yaBKhGfZ5xk6LX/5tNjI
+        nEshOLwPbAPTLbSElanVyMamUaBKa8chVbK2k178XrzjQbBRMvDtCYhZ/zzQ8Ynd
+        1fyCjgW3wf5XE4qMpW2lt2UPBU7d1ZP6sqlGdgJXXU0siU1ivN4O28foxIPB6u9g
+        /ydlDXJK1+XM0bGvXZsfZDJ6qSgzGHWjYPHyEDxz3fTZvdG+Q0y4L/Y6rEpN0MiD
+        5mJJ/d5jtI+Kzans3kNC5n39Ng+W2o565i0EjReVmq3QVcP7L5T1t/WhqxDsNXdv
+        Vu1lRunzEzdFRCNQ57JaXkHMc70dRT3dxi1cWY/Y7Nb3rrK3j7hYD3S+7hMfiiqt
+        sJWqsNtntOHChWdqQZXVI2Efof8m+5FyLC4yWZhhCuHCI0dAb60h6D737lhnOBkC
+        gcEA54vCxsAqXHkZCoYj1sh6eP9V0y78BLTYKifV/ivMs9SR6ldN/OVcJSstZFwZ
+        aqtHu/kau0SWSGGB5TnmYO1zNGpSoFoA5MzrhVrbEnbpv60rDZUvQAj3y3l1lSH5
+        vQBpQcAMqzqZN6x2WC6TQ84bmHZHRO5RZKbRHdmDm/6bnvQnInGvcvyDl5bsZ1QW
+        AWxjg9DGZdho6pNw39CrJ2qBfwDrPmSI9UX/sTMq+j6nSovBoiqka6HIidNEKdS6
+        doBLAoHBAKPJPC+NuPV7CowAQO6VbVbEYaBUW8AhhBfN4qU0oHHIaVJamS2hCmSB
+        /QoEXQ4NMddM3wXRRlAkCNjHPtemx6Fx2H0kOsCwf6XwKK9MF3xI8wyk9/4YvANq
+        zTGhFFLeq/CpKQ/eWZ1mykwxermH6tN6Ny/k1OEMcrOJuUAC3oJLhuGCMAqOojpl
+        fmeuJwtWvZlfBFqR89lerV/iYz69jtsY1VJmf57jsmY5fC/RpSJSfJi01faWUWEI
+        Uj1ZU4Q7wwKBwGJ0qEbQ0XJuv7oc3cJnjsRCdmENGnZ522zZcYHZZ/qTidQmeW/u
+        qybW3D9PdjNIT4FbZAV7HZf7djtdSluuvAzupOGwQ68Gf6M9xedtDunFHYhyBhxp
+        c8xegiP+xW2bbiZaHkj06s+kktHeRBpR2qQSry1dVNjCoiraIb9EHTISyU05IAx5
+        2Q6tSyqIs665Qvt629HUmpAcT6Or3Asvm47AekcWgrIgqJ/VjRHJcGMfWB+3mCB4
+        M4h/f/11ii/3TwKBwB6ukvTBktWBsC8b2Q4YtfvcHAHB69IpNSqUahHSsv+9sGU6
+        DZnrohvD8hgPSzNXq2+OufTICGj45yNc59vUJW+L+ScwQ0VXiwIV5Dk6gufIbqd+
+        u+pAze/B8SCL8Ve42PLjbYrId3cyC1GMr1XULVxid7YkIvDpuQ8DDM39+5ri9SiH
+        j+JaZ++SlcRsbmoEXM4/a3xf/RNKViYxLbBSKFHI7CVciCnGs+PMfwQiPNIaK7cb
+        oT1pWWNZALb3ZdrOqwKBwQCh6qY77hi+3LyZsa3y+o4xhPgAnNYmiXhMU0uLwrPe
+        Vt3PvuAKDwSmBNy3qAbKKb0vccLC9CEOP9dnWTNCBxTsC7ff5O0YRo+47xmcfOFf
+        67/wfAix1f3bBbQVlv9HtE7id/8l3uJL/KOu9GrZXnpOBLGo46NfJ5k0sUN5RX18
+        4nFYcVfCgQ5SmruKh+WNGw8OhJIf+K+RQ/F+etu1mBe7lyFAgd9ted9RRX/1sD62
+        9z4AmGSA84+b8FYo7ZghAjI=
         -----END PRIVATE KEY-----
+        """;
+
+    /// <summary>
+    /// THESE ARE RANDOMLY GENERATED KEYS NOT USED FOR ANYTHING IMPORTANT
+    /// </summary>
+    private const string PublicKey = """
+        -----BEGIN PUBLIC KEY-----
+        MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAlCQAMD7mdm5tRA3TP+H1
+        sFk2U9AWvrwirQRls6b9wauvKxBQVNMJ4dhDnWs5tpQRWbetEvdOKoVKYJyN5pWA
+        SO9RpiCcl5PJaNeCIThCI0ZQ3swPudZIOiATQ6a+4Q+AvrWuWIu7yoxrZOrF00/A
+        tsbq1jyTVJlM7vDk0HzXpqF3Ew7PxbUH4osU7jEO8zORFpjVIsKenGrNmjanQ2Nv
+        xP9OlTu0kGh8ALZVsiKgdBSWYKjHv1uCZmRwu8gNzdkG14Ir2vEenI2ukJJgO4x3
+        B8+a9s/4mTV66IoGt+IiJNQAN+gsUjQf8MscbjvGvXFMK3TksDPc8SzBQlYS+rEj
+        gHBnSrvpcvO/OX34EA/PF935uEwP9s3B1LNwiEr1zny8p6SMfXhDJSWq/HfzBaSZ
+        /QjetkaqxYoGF81fLlCTgj8mhXmSkJP/5qjEpqSqCE3MsdnuHLjR3QUUbPr6PX0A
+        EYiMpi6ypbP5MManFquhYEEwB3OafBWOJ6x+7cjPgQIhAgMBAAE=
+        -----END PUBLIC KEY-----
         """;
 
     [TestInitialize()]
@@ -95,10 +139,11 @@ public class PackTest
 
             var hash = reader.ReadBytes(SHA384.HashSizeInBytes);
             var signed = reader.ReadBoolean();
+            byte[]? signature = null;
             if (signed)
             {
                 var length = reader.ReadInt32();
-                reader.ReadBytes(length);
+                signature = reader.ReadBytes(length);
             }
 
             var dataLength = reader.ReadInt32();
@@ -110,6 +155,16 @@ public class PackTest
                 var hashString = Convert.ToHexString(verifyHash);
 
                 Assert.IsTrue(verifyHash.SequenceEqual(hash), $"Expected {Convert.ToHexString(hash)} got {hashString}");
+            }
+
+            if(signed)
+            {
+                using var rsa = RSA.Create();
+                rsa.ImportFromPem(PublicKey);
+
+                var verified = rsa.VerifyData(hash, signature, HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1);
+
+                Assert.IsTrue(verified, "Invalid signature");
             }
 
             file.Position = dataPos;

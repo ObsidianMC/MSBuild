@@ -4,6 +4,7 @@
 		<OutputType>Library</OutputType>
 		<TargetFramework>net9.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>annotations</Nullable>
 
 		<IsPackable>false</IsPackable>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
