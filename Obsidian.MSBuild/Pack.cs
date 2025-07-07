@@ -1,6 +1,5 @@
 ﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
@@ -19,8 +18,7 @@ namespace Obsidian.MSBuild
         public const int MinCompressionSize = 1024;
         public const float CompressionTradeoff = 0.9f;
 
-        public const int HashSizeInBits = 384;
-        public const int HashSizeInBytes = HashSizeInBits / 8;
+        public const int HashSizeInBytes = 48;
         public string PluginPublishDir { get; set; }
 
         [Required]
@@ -64,12 +62,25 @@ namespace Obsidian.MSBuild
 
         public override bool Execute()
         {
+            if (File.Exists(this.PluginSigningKey))
+                this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
+
             var dependencies = this.BuildDependencies();
             var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
 
-            var baseHeaderSize = HashSizeInBytes + HashSizeInBits;
+            RsaPrivateCrtKeyParameters keyPair = null;
+            if (shouldSign)
+            {
+                var signer = SignerUtilities.GetSigner("SHA384WITHRSA");
+                using (var reader = new StringReader(this.PluginSigningKey))
+                {
+                    var pemReader = new PemReader(reader);
+                    keyPair = (RsaPrivateCrtKeyParameters)pemReader.ReadObject();
+                }
+            }
+
             //+5 to account for the boolean and data length
-            var headerSize = shouldSign ? baseHeaderSize + 9 : HashSizeInBytes + 5;
+            var headerSize = shouldSign ? HashSizeInBytes + (keyPair.Modulus.BitLength / 8) + 9 : HashSizeInBytes + 5;
 
             this.WriteLine(MessageImportance.High, "------ Starting Plugin Packer ------");
             var files = Directory.GetFiles(this.PluginPublishDir).Select(x => new FileInfo(x));
@@ -79,7 +90,7 @@ namespace Obsidian.MSBuild
             foreach (var file in files)
             {
                 if (file.Name.StartsWith("testhost") || file.Name == $"{this.PluginAssembly}.obby")
-                    continue;//Skip testhost files
+                    continue;
 
                 this.Add(entries, file);
             }
@@ -152,25 +163,17 @@ namespace Obsidian.MSBuild
                     writer.Write(shouldSign);
                     if (shouldSign)
                     {
-                        if (File.Exists(this.PluginSigningKey))
-                            this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
-
                         var signer = SignerUtilities.GetSigner("SHA384WITHRSA");
-                        using (var reader = new StringReader(this.PluginSigningKey))
-                        {
-                            var pemReader = new PemReader(reader);
-                            var keyPair = (RsaPrivateCrtKeyParameters)pemReader.ReadObject();
 
-                            signer.Init(true, keyPair);
+                        signer.Init(true, keyPair);
 
-                            signer.BlockUpdate(hash, 0, hash.Length);
+                        signer.BlockUpdate(hash, 0, hash.Length);
 
-                            var sig = signer.GenerateSignature();
+                        var sig = signer.GenerateSignature();
 
-                            this.WriteLine(MessageImportance.High, "Signature length: {0}", sig.Length);
-                            writer.Write(sig.Length);
-                            writer.Write(sig);
-                        }
+                        this.WriteLine(MessageImportance.High, "Signature length: {0}", sig.Length);
+                        writer.Write(sig.Length);
+                        writer.Write(sig);
                     }
                     else
                     {
