@@ -187,6 +187,26 @@ public class PackTest
 
             var entryCount = reader.ReadInt32();
 
+            var testEntries = new Dictionary<string, (string, int length, int compressedLength)>();
+
+            for(var i = 0; i < entryCount; i++)
+            {
+                var entryName = reader.ReadString();
+                var entryLength = reader.ReadInt32();
+                var entryCompressedLength = reader.ReadInt32();
+
+                testEntries[entryName] = (entryName, entryLength, entryCompressedLength);
+            }
+
+            foreach(var (_, entry) in testEntries)
+            {
+                var data = new byte[entry.compressedLength];
+
+                var bytesRead = reader.Read(data);
+
+                Assert.AreEqual(data.Length, bytesRead);
+            }
+
             Assert.AreEqual("OBBY", headerId);
             Assert.AreEqual("1.0.0", apiVersion);
 

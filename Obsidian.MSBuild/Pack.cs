@@ -94,7 +94,6 @@ namespace Obsidian.MSBuild
 
             using (var fs = new FileStream(filePath, FileMode.CreateNew))
             {
-
                 using (var writer = new BinaryWriter(fs))
                 {
                     writer.Write(Encoding.ASCII.GetBytes("OBBY"));
@@ -236,23 +235,25 @@ namespace Obsidian.MSBuild
 
             var currentLength = data.Length;
 
-            this.Log.LogMessage( $"------ Packing {file.Name} ------");
+            this.WriteLine(MessageImportance.High, $"------ Packing {file.Name} ------");
 
-            this.Log.LogMessage($"Current file length: {currentLength}.");
+            this.WriteLine(MessageImportance.High, $"Current file length: {currentLength}.");
 
             if (currentLength > MinCompressionSize)
             {
                 using (var ms = new MemoryStream(data.Length))
-                using (var deflateSteam = new DeflateStream(ms, CompressionMode.Compress))
                 {
-                    deflateSteam.Write(data, 0, data.Length);
+                    using (var deflateSteam = new DeflateStream(ms, CompressionMode.Compress))
+                    {
+                        deflateSteam.Write(data, 0, data.Length);
+                    }
 
                     var compressedData = ms.ToArray();
 
                     if (compressedData.Length < currentLength * CompressionTradeoff)
                     {
                         data = compressedData;
-                        this.Log.LogMessage($"Compressed length: {compressedData.Length}.");
+                        this.WriteLine(MessageImportance.High, $"Compressed length: {compressedData.Length}.");
                     }
                 }
             }
