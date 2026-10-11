@@ -42,7 +42,6 @@
 		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" PrivateAssets="all" ExcludeAssets="Runtime">
 		  <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
 	</ItemGroup>
 
 	<ItemGroup>

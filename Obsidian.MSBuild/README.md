@@ -28,11 +28,12 @@ Install the package and set the plugin metadata in your csproj:
     <!-- Optional: both (default), server or client. -->
     <PluginSide>both</PluginSide>
 
-    <!-- Optional: where the archive is written. Defaults to ./bin/$(Configuration)/ -->
+    <!-- Optional: the folder packed, where the archive is written too. Defaults to the build output folder. -->
     <PluginPublishDir>$(PublishDir)</PluginPublishDir>
 
-    <!-- Optional: RSA private key in PEM format, either a file path or the PEM text. Signs the archive. -->
-    <PluginSigningKey>keys/ruby.pem</PluginSigningKey>
+    <!-- Optional: the folders packed as assets/ and data/, relative to the project. Default: assets and data. -->
+    <PluginAssetsDir>Resources/assets</PluginAssetsDir>
+    <PluginDataDir>Resources/data</PluginDataDir>
 </PropertyGroup>
 
 <ItemGroup>
@@ -73,9 +74,10 @@ project directory (or wherever `PluginMetadataFile` points), it is packed as-is 
 | `Side` | `side` | `both`, `server` or `client` |
 
 ## Assets and data
-Files under `assets/` and `data/` in the project directory are packed under the same paths, laid out like a
-resource pack and a data pack: `assets/<namespace>/...` for client resources and `data/<namespace>/...` for
-server data. Point `PluginAssetsDir` or `PluginDataDir` elsewhere to use different folders.
+The `assets` and `data` folders of the project are packed under `assets/` and `data/`, laid out like a resource pack
+and a data pack: `assets/<namespace>/...` for client resources and `data/<namespace>/...` for server data. Set
+`PluginAssetsDir` or `PluginDataDir` in the project to pack other folders (paths relative to the project, or
+absolute), or set one empty to pack no such folder. A folder that doesn't exist is skipped.
 
 ## Archive layout
 A version 2 `.obby` is a ZIP file:
@@ -87,12 +89,5 @@ A version 2 `.obby` is a ZIP file:
 | `*.dll`, `*.pdb` | Libraries beside the main assembly, as `dotnet publish` lays them out. |
 | `assets/<namespace>/...` | Optional client resources. |
 | `data/<namespace>/...` | Optional server data. |
-| `obsidian.sig` | Optional signature, present when `PluginSigningKey` is set. |
 
 Only the top-level files of `PluginPublishDir` are packed; `testhost*` files and the archive itself are skipped.
-
-## Signing
-When `PluginSigningKey` is set, `obsidian.sig` holds an RSA PKCS #1 v1.5 SHA-384 signature over the archive
-digest. The digest is SHA-384 over every entry except `obsidian.sig`, in ordinal order of their paths, each
-contributing its path as UTF-8, one zero byte and the SHA-384 hash of its uncompressed contents. Obsidian verifies
-it with `RSA.VerifyData(digest, signature, SHA384, Pkcs1)` against your public key.

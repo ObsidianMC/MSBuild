@@ -12,69 +12,6 @@ namespace Obsidian.MSBuild.Tests;
 [TestClass]
 public class PackTest
 {
-    /// <summary>
-    /// THESE ARE RANDOMLY GENERATED KEYS NOT USED FOR ANYTHING IMPORTANT
-    /// </summary>
-    private const string PrivateKey = """
-        -----BEGIN PRIVATE KEY-----
-        MIIG/QIBADANBgkqhkiG9w0BAQEFAASCBucwggbjAgEAAoIBgQCUJAAwPuZ2bm1E
-        DdM/4fWwWTZT0Ba+vCKtBGWzpv3Bq68rEFBU0wnh2EOdazm2lBFZt60S904qhUpg
-        nI3mlYBI71GmIJyXk8lo14IhOEIjRlDezA+51kg6IBNDpr7hD4C+ta5Yi7vKjGtk
-        6sXTT8C2xurWPJNUmUzu8OTQfNemoXcTDs/FtQfiixTuMQ7zM5EWmNUiwp6cas2a
-        NqdDY2/E/06VO7SQaHwAtlWyIqB0FJZgqMe/W4JmZHC7yA3N2QbXgiva8R6cja6Q
-        kmA7jHcHz5r2z/iZNXroiga34iIk1AA36CxSNB/wyxxuO8a9cUwrdOSwM9zxLMFC
-        VhL6sSOAcGdKu+ly8785ffgQD88X3fm4TA/2zcHUs3CISvXOfLynpIx9eEMlJar8
-        d/MFpJn9CN62RqrFigYXzV8uUJOCPyaFeZKQk//mqMSmpKoITcyx2e4cuNHdBRRs
-        +vo9fQARiIymLrKls/kwxqcWq6FgQTAHc5p8FY4nrH7tyM+BAiECAwEAAQKCAYBm
-        47I10BolO4EseSW2AuyvtOakw6xogSbcYGd6pYstjl61XDlPENyWPayIk0acZq6+
-        T3In8BgcNEN6YoG0GzXkckOVTKU2KfEDnlrFU9urwFS+yaBKhGfZ5xk6LX/5tNjI
-        nEshOLwPbAPTLbSElanVyMamUaBKa8chVbK2k178XrzjQbBRMvDtCYhZ/zzQ8Ynd
-        1fyCjgW3wf5XE4qMpW2lt2UPBU7d1ZP6sqlGdgJXXU0siU1ivN4O28foxIPB6u9g
-        /ydlDXJK1+XM0bGvXZsfZDJ6qSgzGHWjYPHyEDxz3fTZvdG+Q0y4L/Y6rEpN0MiD
-        5mJJ/d5jtI+Kzans3kNC5n39Ng+W2o565i0EjReVmq3QVcP7L5T1t/WhqxDsNXdv
-        Vu1lRunzEzdFRCNQ57JaXkHMc70dRT3dxi1cWY/Y7Nb3rrK3j7hYD3S+7hMfiiqt
-        sJWqsNtntOHChWdqQZXVI2Efof8m+5FyLC4yWZhhCuHCI0dAb60h6D737lhnOBkC
-        gcEA54vCxsAqXHkZCoYj1sh6eP9V0y78BLTYKifV/ivMs9SR6ldN/OVcJSstZFwZ
-        aqtHu/kau0SWSGGB5TnmYO1zNGpSoFoA5MzrhVrbEnbpv60rDZUvQAj3y3l1lSH5
-        vQBpQcAMqzqZN6x2WC6TQ84bmHZHRO5RZKbRHdmDm/6bnvQnInGvcvyDl5bsZ1QW
-        AWxjg9DGZdho6pNw39CrJ2qBfwDrPmSI9UX/sTMq+j6nSovBoiqka6HIidNEKdS6
-        doBLAoHBAKPJPC+NuPV7CowAQO6VbVbEYaBUW8AhhBfN4qU0oHHIaVJamS2hCmSB
-        /QoEXQ4NMddM3wXRRlAkCNjHPtemx6Fx2H0kOsCwf6XwKK9MF3xI8wyk9/4YvANq
-        zTGhFFLeq/CpKQ/eWZ1mykwxermH6tN6Ny/k1OEMcrOJuUAC3oJLhuGCMAqOojpl
-        fmeuJwtWvZlfBFqR89lerV/iYz69jtsY1VJmf57jsmY5fC/RpSJSfJi01faWUWEI
-        Uj1ZU4Q7wwKBwGJ0qEbQ0XJuv7oc3cJnjsRCdmENGnZ522zZcYHZZ/qTidQmeW/u
-        qybW3D9PdjNIT4FbZAV7HZf7djtdSluuvAzupOGwQ68Gf6M9xedtDunFHYhyBhxp
-        c8xegiP+xW2bbiZaHkj06s+kktHeRBpR2qQSry1dVNjCoiraIb9EHTISyU05IAx5
-        2Q6tSyqIs665Qvt629HUmpAcT6Or3Asvm47AekcWgrIgqJ/VjRHJcGMfWB+3mCB4
-        M4h/f/11ii/3TwKBwB6ukvTBktWBsC8b2Q4YtfvcHAHB69IpNSqUahHSsv+9sGU6
-        DZnrohvD8hgPSzNXq2+OufTICGj45yNc59vUJW+L+ScwQ0VXiwIV5Dk6gufIbqd+
-        u+pAze/B8SCL8Ve42PLjbYrId3cyC1GMr1XULVxid7YkIvDpuQ8DDM39+5ri9SiH
-        j+JaZ++SlcRsbmoEXM4/a3xf/RNKViYxLbBSKFHI7CVciCnGs+PMfwQiPNIaK7cb
-        oT1pWWNZALb3ZdrOqwKBwQCh6qY77hi+3LyZsa3y+o4xhPgAnNYmiXhMU0uLwrPe
-        Vt3PvuAKDwSmBNy3qAbKKb0vccLC9CEOP9dnWTNCBxTsC7ff5O0YRo+47xmcfOFf
-        67/wfAix1f3bBbQVlv9HtE7id/8l3uJL/KOu9GrZXnpOBLGo46NfJ5k0sUN5RX18
-        4nFYcVfCgQ5SmruKh+WNGw8OhJIf+K+RQ/F+etu1mBe7lyFAgd9ted9RRX/1sD62
-        9z4AmGSA84+b8FYo7ZghAjI=
-        -----END PRIVATE KEY-----
-        """;
-
-    /// <summary>
-    /// THESE ARE RANDOMLY GENERATED KEYS NOT USED FOR ANYTHING IMPORTANT
-    /// </summary>
-    private const string PublicKey = """
-        -----BEGIN PUBLIC KEY-----
-        MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAlCQAMD7mdm5tRA3TP+H1
-        sFk2U9AWvrwirQRls6b9wauvKxBQVNMJ4dhDnWs5tpQRWbetEvdOKoVKYJyN5pWA
-        SO9RpiCcl5PJaNeCIThCI0ZQ3swPudZIOiATQ6a+4Q+AvrWuWIu7yoxrZOrF00/A
-        tsbq1jyTVJlM7vDk0HzXpqF3Ew7PxbUH4osU7jEO8zORFpjVIsKenGrNmjanQ2Nv
-        xP9OlTu0kGh8ALZVsiKgdBSWYKjHv1uCZmRwu8gNzdkG14Ir2vEenI2ukJJgO4x3
-        B8+a9s/4mTV66IoGt+IiJNQAN+gsUjQf8MscbjvGvXFMK3TksDPc8SzBQlYS+rEj
-        gHBnSrvpcvO/OX34EA/PF935uEwP9s3B1LNwiEr1zny8p6SMfXhDJSWq/HfzBaSZ
-        /QjetkaqxYoGF81fLlCTgj8mhXmSkJP/5qjEpqSqCE3MsdnuHLjR3QUUbPr6PX0A
-        EYiMpi6ypbP5MManFquhYEEwB3OafBWOJ6x+7cjPgQIhAgMBAAE=
-        -----END PUBLIC KEY-----
-        """;
-
     private string root = null!;
     private string publishDir = null!;
 
@@ -157,29 +94,6 @@ public class PackTest
     }
 
     [TestMethod]
-    public void Pack_SignatureVerifiesWithDotNetRsa()
-    {
-        var task = this.CreateTask();
-        task.PluginSigningKey = PrivateKey;
-
-        Assert.IsTrue(task.Execute());
-
-        using var archive = ZipFile.OpenRead(task.PackedFile);
-        var signature = ReadEntry(archive, "obsidian.sig");
-        var digest = ComputeDigestLikeObsidian(archive);
-
-        using var rsa = RSA.Create();
-        rsa.ImportFromPem(PublicKey);
-
-        Assert.IsTrue(
-            rsa.VerifyData(digest, signature, HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1),
-            "Signature does not verify over the archive digest.");
-
-        digest[0] ^= 0xFF;
-        Assert.IsFalse(rsa.VerifyData(digest, signature, HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1));
-    }
-
-    [TestMethod]
     public void Pack_UsesProjectMetadataFileVerbatim()
     {
         var custom = Encoding.UTF8.GetBytes("""{ "modId": "ruby", "version": "9.9.9", "assembly": "Ruby" }""");
@@ -192,28 +106,6 @@ public class PackTest
 
         using var archive = ZipFile.OpenRead(task.PackedFile);
         CollectionAssert.AreEqual(custom, ReadEntry(archive, "obsidian.mod.json"));
-    }
-
-    /// <summary>
-    /// The digest Obsidian's reader verifies: SHA-384 over every entry except obsidian.sig in ordinal path order,
-    /// each as UTF-8 path, a zero byte and the SHA-384 of its uncompressed contents.
-    /// </summary>
-    private static byte[] ComputeDigestLikeObsidian(ZipArchive archive)
-    {
-        using var buffer = new MemoryStream();
-
-        var entries = archive.Entries
-            .Where(entry => entry.FullName != "obsidian.sig")
-            .OrderBy(entry => entry.FullName, StringComparer.Ordinal);
-
-        foreach (var entry in entries)
-        {
-            buffer.Write(Encoding.UTF8.GetBytes(entry.FullName));
-            buffer.WriteByte(0);
-            buffer.Write(SHA384.HashData(ReadEntry(archive, entry.FullName)));
-        }
-
-        return SHA384.HashData(buffer.ToArray());
     }
 
     private Pack CreateTask()

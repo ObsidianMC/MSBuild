@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
 	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
-		<MakeDir Directories="$(PluginPublishDir)"/>
+		<!-- The assets and data folders can be set in the project, relative to it; empty packs neither. The plugin is
+		     packed from the build output unless the project says otherwise; that is only known here, once it built. -->
+		<PropertyGroup>
+			<_PluginPublishDir>$(PluginPublishDir)</_PluginPublishDir>
+			<_PluginPublishDir Condition="'$(_PluginPublishDir)' == ''">$(OutDir)</_PluginPublishDir>
+			<_PluginPublishDir>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(_PluginPublishDir)'))</_PluginPublishDir>
+			<_PluginAssetsDir Condition="'$(PluginAssetsDir)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(PluginAssetsDir)'))</_PluginAssetsDir>
+			<_PluginDataDir Condition="'$(PluginDataDir)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(PluginDataDir)'))</_PluginDataDir>
+		</PropertyGroup>
+
+		<MakeDir Directories="$(_PluginPublishDir)"/>
 
 		<Pack PluginAssembly="$(AssemblyName)"
 			  PluginVersion="$(Version)"
@@ -13,10 +23,9 @@
 			  PluginApiVersion="$(PluginApiVersion)"
 			  PluginSide="$(PluginSide)"
 			  PluginDependencies="@(PluginDependency)"
-			  PluginPublishDir="$(PluginPublishDir)"
+			  PluginPublishDir="$(_PluginPublishDir)"
 			  PluginMetadataFile="$(PluginMetadataFile)"
-			  PluginAssetsDir="$(PluginAssetsDir)"
-			  PluginDataDir="$(PluginDataDir)"
-			  PluginSigningKey="$(PluginSigningKey)" />
+			  PluginAssetsDir="$(_PluginAssetsDir)"
+			  PluginDataDir="$(_PluginDataDir)" />
 	</Target>
 </Project>
