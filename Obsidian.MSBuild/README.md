@@ -79,6 +79,10 @@ and a data pack: `assets/<namespace>/...` for client resources and `data/<namesp
 `PluginAssetsDir` or `PluginDataDir` in the project to pack other folders (paths relative to the project, or
 absolute), or set one empty to pack no such folder. A folder that doesn't exist is skipped.
 
+The data folder's JSON files are also given to the compiler, with their path in the folder, so that Obsidian's source
+generator generates the plugin's blocks from `data/<namespace>/blocks/*.json` and keys for its tags from
+`data/<namespace>/tags/block` and `tags/item`.
+
 ## Archive layout
 A version 2 `.obby` is a ZIP file:
 

@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
+	<!-- Obsidian generates a plugin's blocks and tag keys from the block definitions and tag files in its data folder,
+	     and learns each file's path in the folder, whatever the folder is called, from PluginDataPath. -->
+	<ItemGroup Condition="'$(PluginDataDir)' != ''">
+		<AdditionalFiles Include="$([MSBuild]::EnsureTrailingSlash('$(PluginDataDir)'))**\*.json"
+						 PluginDataPath="%(RecursiveDir)%(Filename)%(Extension)" />
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PluginDataPath" />
+	</ItemGroup>
+
 	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
 		<!-- The assets and data folders can be set in the project, relative to it; empty packs neither. The plugin is
 		     packed from the build output unless the project says otherwise; that is only known here, once it built. -->
