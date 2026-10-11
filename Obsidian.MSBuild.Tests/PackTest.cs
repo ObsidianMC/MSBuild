@@ -1,17 +1,17 @@
-﻿using Microsoft.Build.Framework;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace Obsidian.MSBuild.Tests;
 
 [TestClass]
 public class PackTest
 {
-    private Mock<IBuildEngine> buildEngine;
-    private List<BuildErrorEventArgs> errors;
-
     /// <summary>
     /// THESE ARE RANDOMLY GENERATED KEYS NOT USED FOR ANYTHING IMPORTANT
     /// </summary>
@@ -75,158 +75,194 @@ public class PackTest
         -----END PUBLIC KEY-----
         """;
 
-    [TestInitialize()]
-    public void Startup()
+    private string root = null!;
+    private string publishDir = null!;
+
+    /// <summary>Lays out a fake publish folder plus assets/ and data/ trees in a fresh temp directory.</summary>
+    [TestInitialize]
+    public void CreateFakeProject()
     {
-        this.buildEngine = new();
-        this.errors = [];
-        this.buildEngine.Setup(x => x.LogErrorEvent(It.IsAny<BuildErrorEventArgs>())).Callback<BuildErrorEventArgs>(e => errors.Add(e));
+        this.root = Path.Combine(Path.GetTempPath(), "obby-" + Guid.NewGuid().ToString("N"));
+        this.publishDir = Path.Combine(this.root, "publish");
+
+        WriteFile(Path.Combine(this.publishDir, "Ruby.dll"), RandomBytes(4096));
+        WriteFile(Path.Combine(this.publishDir, "Ruby.pdb"), RandomBytes(100));
+        WriteFile(Path.Combine(this.publishDir, "Ruby.deps.json"), Encoding.UTF8.GetBytes("{}"));
+        WriteFile(Path.Combine(this.publishDir, "GemLib.dll"), RandomBytes(2048));
+        WriteFile(Path.Combine(this.publishDir, "testhost.dll"), RandomBytes(10));
+        WriteFile(Path.Combine(this.root, "assets", "ruby", "textures", "item", "ruby.png"), RandomBytes(64));
+        WriteFile(Path.Combine(this.root, "data", "ruby", "recipes", "ruby.json"), Encoding.UTF8.GetBytes("{}"));
+    }
+
+    [TestCleanup]
+    public void DeleteFakeProject()
+    {
+        Directory.Delete(this.root, recursive: true);
     }
 
     [TestMethod]
-    public void Pack_Success()
+    public void Pack_WritesVersion2Archive()
     {
-        var packTask = new Pack
+        var task = this.CreateTask();
+
+        Assert.IsTrue(task.Execute());
+        Assert.AreEqual(Path.Combine(this.publishDir, "Ruby.obby"), task.PackedFile);
+
+        using var archive = ZipFile.OpenRead(task.PackedFile);
+
+        var expectedEntries = new[]
         {
-            PluginApiVersion = "1.0.0",
-            PluginId = "obsidianteam.mysampleplugin",
-            PluginAssembly = "MySamplePluginTemplate",
-            PluginAuthors = "ObsidianTeam",
-            PluginVersion = "1.0.0",
-            PluginDependencies = [],
-            BuildEngine = this.buildEngine.Object,
-            PluginName = "My Sample Plugin",
-            PluginSigningKey = PrivateKey,
-            PluginPublishDir = "."
+            "GemLib.dll",
+            "Ruby.deps.json",
+            "Ruby.dll",
+            "Ruby.pdb",
+            "assets/ruby/textures/item/ruby.png",
+            "data/ruby/recipes/ruby.json",
+            "obsidian.mod.json"
         };
 
-        var success = packTask.Execute();
+        CollectionAssert.AreEquivalent(expectedEntries, archive.Entries.Select(entry => entry.FullName).ToArray());
+        CollectionAssert.AreEqual(
+            File.ReadAllBytes(Path.Combine(this.publishDir, "Ruby.dll")),
+            ReadEntry(archive, "Ruby.dll"));
 
-        Assert.IsTrue(success);
-        Assert.IsTrue(File.Exists(packTask.PackedFile));
+        using var metadata = JsonDocument.Parse(ReadEntry(archive, "obsidian.mod.json"));
+        var mod = metadata.RootElement;
 
-        File.Delete(packTask.PackedFile);
+        Assert.AreEqual("ruby", mod.GetProperty("modId").GetString());
+        Assert.AreEqual("Ruby \"Gems\"", mod.GetProperty("displayName").GetString());
+        Assert.AreEqual("1.2.0", mod.GetProperty("version").GetString());
+        Assert.AreEqual("Ruby", mod.GetProperty("assembly").GetString());
+        Assert.AreEqual("1.0.0", mod.GetProperty("apiVersion").GetString());
+        Assert.AreEqual("Adds rubies.", mod.GetProperty("description").GetString());
+        Assert.AreEqual("https://example.com/ruby", mod.GetProperty("projectUrl").GetString());
+        Assert.AreEqual("both", mod.GetProperty("side").GetString());
+        CollectionAssert.AreEqual(
+            new[] { "Tides", "Ada" },
+            mod.GetProperty("authors").EnumerateArray().Select(author => author.GetString()).ToArray());
+
+        var dependencies = mod.GetProperty("dependencies").EnumerateArray().ToArray();
+        Assert.AreEqual(2, dependencies.Length);
+
+        Assert.AreEqual("gemlib", dependencies[0].GetProperty("modId").GetString());
+        Assert.AreEqual("required", dependencies[0].GetProperty("type").GetString());
+        Assert.AreEqual("[1.0,2.0)", dependencies[0].GetProperty("versionRange").GetString());
+        Assert.AreEqual("after", dependencies[0].GetProperty("ordering").GetString());
+        Assert.AreEqual("server", dependencies[0].GetProperty("side").GetString());
+
+        Assert.AreEqual("optionallib", dependencies[1].GetProperty("modId").GetString());
+        Assert.AreEqual("optional", dependencies[1].GetProperty("type").GetString());
+        Assert.IsFalse(dependencies[1].TryGetProperty("versionRange", out _));
+        Assert.IsFalse(dependencies[1].TryGetProperty("ordering", out _));
     }
 
     [TestMethod]
-    public void Pack_Read_Success()
+    public void Pack_SignatureVerifiesWithDotNetRsa()
     {
-        var packTask = new Pack
+        var task = this.CreateTask();
+        task.PluginSigningKey = PrivateKey;
+
+        Assert.IsTrue(task.Execute());
+
+        using var archive = ZipFile.OpenRead(task.PackedFile);
+        var signature = ReadEntry(archive, "obsidian.sig");
+        var digest = ComputeDigestLikeObsidian(archive);
+
+        using var rsa = RSA.Create();
+        rsa.ImportFromPem(PublicKey);
+
+        Assert.IsTrue(
+            rsa.VerifyData(digest, signature, HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1),
+            "Signature does not verify over the archive digest.");
+
+        digest[0] ^= 0xFF;
+        Assert.IsFalse(rsa.VerifyData(digest, signature, HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1));
+    }
+
+    [TestMethod]
+    public void Pack_UsesProjectMetadataFileVerbatim()
+    {
+        var custom = Encoding.UTF8.GetBytes("""{ "modId": "ruby", "version": "9.9.9", "assembly": "Ruby" }""");
+        WriteFile(Path.Combine(this.root, "obsidian.mod.json"), custom);
+
+        var task = this.CreateTask();
+        task.PluginMetadataFile = Path.Combine(this.root, "obsidian.mod.json");
+
+        Assert.IsTrue(task.Execute());
+
+        using var archive = ZipFile.OpenRead(task.PackedFile);
+        CollectionAssert.AreEqual(custom, ReadEntry(archive, "obsidian.mod.json"));
+    }
+
+    /// <summary>
+    /// The digest Obsidian's reader verifies: SHA-384 over every entry except obsidian.sig in ordinal path order,
+    /// each as UTF-8 path, a zero byte and the SHA-384 of its uncompressed contents.
+    /// </summary>
+    private static byte[] ComputeDigestLikeObsidian(ZipArchive archive)
+    {
+        using var buffer = new MemoryStream();
+
+        var entries = archive.Entries
+            .Where(entry => entry.FullName != "obsidian.sig")
+            .OrderBy(entry => entry.FullName, StringComparer.Ordinal);
+
+        foreach (var entry in entries)
         {
-            PluginApiVersion = "1.0.0",
-            PluginId = "obsidianteam.mysampleplugin",
-            PluginAssembly = "MySamplePluginTemplate",
-            PluginAuthors = "ObsidianTeam",
-            PluginVersion = "1.0.0",
-            PluginPublishDir = ".",
-            PluginDependencies = [],
-            BuildEngine = this.buildEngine.Object,
-            PluginName = "My Sample Plugin",
-            ProjectUrl = "https://obsidianmc.net",
-            PluginSigningKey = PrivateKey,
-        };
-
-        var success = packTask.Execute();
-
-        Assert.IsTrue(success);
-        Assert.IsTrue(File.Exists(packTask.PackedFile));
-        using (var file = File.OpenRead(packTask.PackedFile))
-        {
-            using var reader = new BinaryReader(file);
-
-            var headerId = Encoding.ASCII.GetString(reader.ReadBytes(4));
-            var apiVersion = reader.ReadString();
-
-            var hash = reader.ReadBytes(SHA384.HashSizeInBytes);
-            var signed = reader.ReadBoolean();
-            byte[]? signature = null;
-            if (signed)
-            {
-                var length = reader.ReadInt32();
-                signature = reader.ReadBytes(length);
-            }
-
-            var dataLength = reader.ReadInt32();
-            var dataPos = file.Position;
-
-            using (var sha384 = SHA384.Create())
-            {
-                var verifyHash = sha384.ComputeHash(file);
-                var hashString = Convert.ToHexString(verifyHash);
-
-                Assert.IsTrue(verifyHash.SequenceEqual(hash), $"Expected {Convert.ToHexString(hash)} got {hashString}");
-            }
-
-            if(signed)
-            {
-                using var rsa = RSA.Create();
-                rsa.ImportFromPem(PublicKey);
-
-                var verified = rsa.VerifyData(hash, signature, HashAlgorithmName.SHA384, RSASignaturePadding.Pkcs1);
-
-                Assert.IsTrue(verified, "Invalid signature");
-            }
-
-            file.Position = dataPos;
-
-            var assemblyName = reader.ReadString();
-            var version = reader.ReadString();
-
-            var name = reader.ReadString();
-            var id = reader.ReadString();
-            var authors = reader.ReadString();
-            var description = reader.ReadString();
-            var projectUrl = reader.ReadString();
-
-            var dependencies = new List<PluginDependency>();
-            var dependsLength = reader.ReadInt32();
-            for (int i = 0; i < dependsLength; i++)
-            {
-                dependencies.Add(new(reader.ReadString(), reader.ReadString(), reader.ReadBoolean()));
-            }
-
-            var entryCount = reader.ReadInt32();
-
-            var testEntries = new Dictionary<string, (string, int length, int compressedLength)>();
-
-            for(var i = 0; i < entryCount; i++)
-            {
-                var entryName = reader.ReadString();
-                var entryLength = reader.ReadInt32();
-                var entryCompressedLength = reader.ReadInt32();
-
-                testEntries[entryName] = (entryName, entryLength, entryCompressedLength);
-            }
-
-            foreach(var (_, entry) in testEntries)
-            {
-                var data = new byte[entry.compressedLength];
-
-                var bytesRead = reader.Read(data);
-
-                Assert.AreEqual(data.Length, bytesRead);
-            }
-
-            Assert.AreEqual("OBBY", headerId);
-            Assert.AreEqual("1.0.0", apiVersion);
-
-            Assert.AreEqual("MySamplePluginTemplate", assemblyName);
-            Assert.AreEqual("1.0.0", version);
-
-            Assert.AreEqual("My Sample Plugin", name);
-            Assert.AreEqual("obsidianteam.mysampleplugin", id);
-            Assert.AreEqual("ObsidianTeam", authors);
-            Assert.AreEqual("No description provided", description);
-            Assert.AreEqual("https://obsidianmc.net", projectUrl);
-            Assert.AreEqual(0, dependencies.Count);
-
-            Console.WriteLine($"Hash: {Convert.ToHexString(hash)}");
-            Console.WriteLine($"Data Length: {dataLength}");
-
-            Assert.IsTrue(signed);
-            Assert.AreEqual(37, entryCount);
+            buffer.Write(Encoding.UTF8.GetBytes(entry.FullName));
+            buffer.WriteByte(0);
+            buffer.Write(SHA384.HashData(ReadEntry(archive, entry.FullName)));
         }
 
-        File.Delete(packTask.PackedFile);
+        return SHA384.HashData(buffer.ToArray());
+    }
+
+    private Pack CreateTask()
+    {
+        var gemlib = new TaskItem("gemlib");
+        gemlib.SetMetadata("Version", "[1.0,2.0)");
+        gemlib.SetMetadata("Type", "Required");
+        gemlib.SetMetadata("Ordering", "after");
+        gemlib.SetMetadata("Side", "server");
+
+        var optionalLib = new TaskItem("ignored");
+        optionalLib.SetMetadata("Id", "optionallib");
+        optionalLib.SetMetadata("Required", "false");
+
+        return new Pack
+        {
+            BuildEngine = new Mock<IBuildEngine>().Object,
+            PluginPublishDir = this.publishDir,
+            PluginAssembly = "Ruby",
+            PluginVersion = "1.2.0",
+            PluginId = "ruby",
+            PluginName = "Ruby \"Gems\"",
+            PluginApiVersion = "1.0.0",
+            PluginAuthors = "Tides, Ada",
+            PluginDescription = "Adds rubies.",
+            ProjectUrl = "https://example.com/ruby",
+            PluginAssetsDir = Path.Combine(this.root, "assets"),
+            PluginDataDir = Path.Combine(this.root, "data"),
+            PluginDependencies = [gemlib, optionalLib]
+        };
+    }
+
+    private static byte[] ReadEntry(ZipArchive archive, string path)
+    {
+        using var stream = archive.GetEntry(path)!.Open();
+        using var buffer = new MemoryStream();
+        stream.CopyTo(buffer);
+
+        return buffer.ToArray();
+    }
+
+    private static void WriteFile(string path, byte[] contents)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllBytes(path, contents);
+    }
+
+    private static byte[] RandomBytes(int length)
+    {
+        return RandomNumberGenerator.GetBytes(length);
     }
 }
