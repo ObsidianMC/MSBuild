@@ -8,6 +8,8 @@
 	<UsingTask TaskName="$(MSBuildThisFileName).Pack" AssemblyFile="$(ObsidianTaskAssembly)" />
 
 	<PropertyGroup>
-		<PluginPublishDir Condition="$(PluginPublishDir) == ''">./bin/$(Configuration)/</PluginPublishDir>
+		<PluginMetadataFile Condition="'$(PluginMetadataFile)' == ''">$(MSBuildProjectDirectory)/obsidian.mod.json</PluginMetadataFile>
+		<PluginAssetsDir Condition="'$(PluginAssetsDir)' == ''">$(MSBuildProjectDirectory)/assets</PluginAssetsDir>
+		<PluginDataDir Condition="'$(PluginDataDir)' == ''">$(MSBuildProjectDirectory)/data</PluginDataDir>
 	</PropertyGroup>
 </Project>

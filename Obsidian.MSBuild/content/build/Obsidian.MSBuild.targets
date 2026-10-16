@@ -1,13 +1,39 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Project>
-	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
-		<MakeDir Directories="$(PluginPublishDir)"/>
+	<!-- Obsidian generates a plugin's blocks and tag keys from the block definitions and tag files in its data folder,
+	     and learns each file's path in the folder, whatever the folder is called, from PluginDataPath. -->
+	<ItemGroup Condition="'$(PluginDataDir)' != ''">
+		<AdditionalFiles Include="$([MSBuild]::EnsureTrailingSlash('$(PluginDataDir)'))**\*.json"
+						 PluginDataPath="%(RecursiveDir)%(Filename)%(Extension)" />
+		<CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="PluginDataPath" />
+	</ItemGroup>
 
-		<Pack PluginAssembly="$(AssemblyName)" PluginVersion="$(Version)" PluginAuthors="$(Authors)"
-			  PluginPublishDir="$(PluginPublishDir)" PluginApiVersion="$(PluginApiVersion)"
-			  PluginSigningKey="$(PluginSigningKey)" PluginDependencies="@(PluginDependency)"
+	<Target Name="PackPlugin" AfterTargets="AfterBuild;Publish">
+		<!-- The assets and data folders can be set in the project, relative to it; empty packs neither. The plugin is
+		     packed from the build output unless the project says otherwise; that is only known here, once it built. -->
+		<PropertyGroup>
+			<_PluginPublishDir>$(PluginPublishDir)</_PluginPublishDir>
+			<_PluginPublishDir Condition="'$(_PluginPublishDir)' == ''">$(OutDir)</_PluginPublishDir>
+			<_PluginPublishDir>$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(_PluginPublishDir)'))</_PluginPublishDir>
+			<_PluginAssetsDir Condition="'$(PluginAssetsDir)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(PluginAssetsDir)'))</_PluginAssetsDir>
+			<_PluginDataDir Condition="'$(PluginDataDir)' != ''">$([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '$(PluginDataDir)'))</_PluginDataDir>
+		</PropertyGroup>
+
+		<MakeDir Directories="$(_PluginPublishDir)"/>
+
+		<Pack PluginAssembly="$(AssemblyName)"
+			  PluginVersion="$(Version)"
 			  PluginId="$(PluginId)"
+			  PluginName="$(Title)"
+			  PluginAuthors="$(Authors)"
 			  PluginDescription="$(Description)"
-			  PluginName="$(Title)" ProjectUrl="$(ProjectUrl)" />
+			  ProjectUrl="$(ProjectUrl)"
+			  PluginApiVersion="$(PluginApiVersion)"
+			  PluginSide="$(PluginSide)"
+			  PluginDependencies="@(PluginDependency)"
+			  PluginPublishDir="$(_PluginPublishDir)"
+			  PluginMetadataFile="$(PluginMetadataFile)"
+			  PluginAssetsDir="$(_PluginAssetsDir)"
+			  PluginDataDir="$(_PluginDataDir)" />
 	</Target>
 </Project>

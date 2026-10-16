@@ -1,31 +1,31 @@
 ﻿using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
-using Org.BouncyCastle.Security;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace Obsidian.MSBuild
 {
+    /// <summary>
+    /// Packs a published plugin into a version 2 .obby archive: a ZIP holding obsidian.mod.json, the publish
+    /// folder's top-level files, and optional assets/ and data/ trees.
+    /// </summary>
     public sealed class Pack : Task
     {
+        public const string MetadataEntryName = "obsidian.mod.json";
+
+        /// <summary>Entries smaller than this are stored instead of deflated.</summary>
         public const int MinCompressionSize = 1024;
-        public const float CompressionTradeoff = 0.9f;
 
-        public const int HashSizeInBytes = 48;
+        private static readonly string[] Sides = { "both", "server", "client" };
+        private static readonly string[] DependencyTypes = { "required", "optional", "incompatible", "discouraged" };
+        private static readonly string[] Orderings = { "none", "before", "after" };
+
+        [Required]
         public string PluginPublishDir { get; set; }
-
-        [Required]
-        public string PluginName { get; set; }
-
-        [Required]
-        public string PluginApiVersion { get; set; }
 
         [Required]
         public string PluginAssembly { get; set; }
@@ -34,256 +34,227 @@ namespace Obsidian.MSBuild
         public string PluginVersion { get; set; }
 
         [Required]
-        public string PluginAuthors { get; set; }
-
-        [Required]
         public string PluginId { get; set; }
 
-        public string ProjectUrl { get; set; }
+        public string PluginName { get; set; }
+
+        public string PluginApiVersion { get; set; }
+
+        /// <summary>Comma-separated author names.</summary>
+        public string PluginAuthors { get; set; }
 
         public string PluginDescription { get; set; }
 
+        public string ProjectUrl { get; set; }
+
+        /// <summary>both (default), server or client.</summary>
+        public string PluginSide { get; set; }
+
+        /// <summary>
+        /// Dependency items. The mod id comes from the Id metadata or the item spec; Version/VersionRange, Type,
+        /// Ordering and Side map to the JSON fields. Required=true/false is accepted as type required/optional.
+        /// </summary>
         public ITaskItem[] PluginDependencies { get; set; } = Array.Empty<ITaskItem>();
 
         /// <summary>
-        /// Must be in XML format to be loaded and used properly. 
-        /// Can be a file or the element directly.
-        ///</summary>
-        public string PluginSigningKey { get; set; }
+        /// A ready-made obsidian.mod.json to pack as-is instead of generating one from the properties above.
+        /// Used only when the file exists.
+        /// </summary>
+        public string PluginMetadataFile { get; set; }
+
+        /// <summary>Folder packed under assets/ when it exists.</summary>
+        public string PluginAssetsDir { get; set; }
+
+        /// <summary>Folder packed under data/ when it exists.</summary>
+        public string PluginDataDir { get; set; }
 
         [Output]
         public string PackedFile { get; set; }
 
-        private void WriteLine(MessageImportance importance, string message, params object[] args)
-        {
-            this.Log.LogMessage(importance, message, args);
-            Console.WriteLine(message, args);
-        }
-
         public override bool Execute()
         {
-            if (File.Exists(this.PluginSigningKey))
-                this.PluginSigningKey = File.ReadAllText(this.PluginSigningKey);
+            var metadata = this.LoadMetadata();
+            if (metadata == null)
+                return false;
 
-            var dependencies = this.BuildDependencies();
-            var shouldSign = !string.IsNullOrEmpty(this.PluginSigningKey);
+            var entries = new SortedDictionary<string, byte[]>(StringComparer.Ordinal);
+            entries[MetadataEntryName] = metadata;
+            this.AddPublishFiles(entries);
+            this.AddTree(entries, this.PluginAssetsDir, "assets");
+            this.AddTree(entries, this.PluginDataDir, "data");
 
-            RsaPrivateCrtKeyParameters keyPair = null;
-            if (shouldSign)
-            {
-                var signer = SignerUtilities.GetSigner("SHA384WITHRSA");
-                using (var reader = new StringReader(this.PluginSigningKey))
-                {
-                    var pemReader = new PemReader(reader);
-                    keyPair = (RsaPrivateCrtKeyParameters)pemReader.ReadObject();
-                }
-            }
-
-            //+5 to account for the boolean and data length
-            var headerSize = shouldSign ? HashSizeInBytes + (keyPair.Modulus.BitLength / 8) + 9 : HashSizeInBytes + 5;
-
-            this.WriteLine(MessageImportance.High, "------ Starting Plugin Packer ------");
-            var files = Directory.GetFiles(this.PluginPublishDir).Select(x => new FileInfo(x));
-
-            this.WriteLine(MessageImportance.High, "Gathering entries...");
-            var entries = new List<Entry>();
-            foreach (var file in files)
-            {
-                if (file.Name.StartsWith("testhost") || file.Name == $"{this.PluginAssembly}.obby")
-                    continue;
-
-                this.Add(entries, file);
-            }
-
-            this.WriteLine(MessageImportance.High, "Entries gathered. Starting packing process..");
-
-            var filePath = Path.Combine(this.PluginPublishDir, $"{this.PluginAssembly}.obby");
+            var filePath = Path.Combine(this.PluginPublishDir, this.PluginAssembly + ".obby");
             if (File.Exists(filePath))
                 File.Delete(filePath);
 
-            this.PackedFile = filePath;
+            this.Log.LogMessage(MessageImportance.High, "Packing {0} entries into {1}", entries.Count, filePath);
 
-            using (var fs = new FileStream(filePath, FileMode.CreateNew))
+            using (var stream = new FileStream(filePath, FileMode.CreateNew))
+            using (var archive = new ZipArchive(stream, ZipArchiveMode.Create))
             {
-                using (var writer = new BinaryWriter(fs))
+                foreach (var entry in entries)
                 {
-                    writer.Write(Encoding.ASCII.GetBytes("OBBY"));
-                    writer.Write(this.PluginApiVersion);
-
-                    var hashAndSignatureStartPos = fs.Position;
-                    writer.Write(new byte[headerSize]);
-
-                    var dataPos = fs.Position;
-                    writer.Write(this.PluginAssembly);
-                    writer.Write(this.PluginVersion);
-
-                    writer.Write(this.PluginName);
-                    writer.Write(this.PluginId);
-                    writer.Write(this.PluginAuthors);
-                    writer.Write(this.PluginDescription ?? "No description provided");
-                    writer.Write(this.ProjectUrl ?? "No project url");
-
-                    writer.Write(dependencies.Length);
-
-                    foreach (var dependency in dependencies)
-                    {
-                        writer.Write(dependency.Id);
-                        writer.Write(dependency.Version);
-                        writer.Write(dependency.Required);
-                    }
-
-                    this.WriteLine(MessageImportance.High, "Writing entry headers. ({0})", entries.Count);
-                    writer.Write(entries.Count);
-
-                    foreach (var entry in entries)
-                    {
-                        this.Log.LogMessage(MessageImportance.Low, "Entry ({0})", entry.Name);
-                        writer.Write(entry.Name);
-                        writer.Write(entry.Length);
-                        writer.Write(entry.CompressedLength);
-                    }
-
-                    this.WriteLine(MessageImportance.High, "Writing entries. ({0})", entries.Count);
-                    foreach (var entry in entries)
-                        writer.Write(entry.Data);
-
-                    // set the hash
-                    fs.Position = dataPos;
-                    byte[] hash;
-
-                    using (var sha384 = SHA384.Create())
-                        hash = sha384.ComputeHash(fs);
-
-                    fs.Position = hashAndSignatureStartPos;
-                    writer.Write(hash);
-
-                    this.WriteLine(MessageImportance.High, "Hash: {0}", BitConverter.ToString(hash).Replace("-", string.Empty));
-                    this.WriteLine(MessageImportance.High, "Hash Length: {0}", hash.Length);
-
-                    writer.Write(shouldSign);
-                    if (shouldSign)
-                    {
-                        var signer = SignerUtilities.GetSigner("SHA384WITHRSA");
-
-                        signer.Init(true, keyPair);
-
-                        signer.BlockUpdate(hash, 0, hash.Length);
-
-                        var sig = signer.GenerateSignature();
-
-                        this.WriteLine(MessageImportance.High, "Signature length: {0}", sig.Length);
-                        writer.Write(sig.Length);
-                        writer.Write(sig);
-                    }
-                    else
-                    {
-                        this.WriteLine(MessageImportance.High, "No signature.");
-                    }
-
-                    // write data length after hash
-                    var dataLength = (int)(fs.Length - hashAndSignatureStartPos);
-                    this.WriteLine(MessageImportance.High, "Data Length: ({0})", dataLength);
-                    writer.Write(dataLength);
-
-                    this.WriteLine(MessageImportance.High, "Plugin successfully packed at {0}", filePath);
+                    this.Log.LogMessage(MessageImportance.Low, "Entry {0} ({1} bytes)", entry.Key, entry.Value.Length);
+                    WriteEntry(archive, entry.Key, entry.Value);
                 }
             }
+
+            this.PackedFile = filePath;
+            this.Log.LogMessage(MessageImportance.High, "Plugin packed at {0}", filePath);
 
             return true;
         }
 
-        private static byte[] GetData(FileInfo file)
+        private static void WriteEntry(ZipArchive archive, string path, byte[] data)
         {
-            using (var fileStream = file.OpenRead())
-            {
-                var data = new byte[fileStream.Length];
+            var level = data.Length < MinCompressionSize ? CompressionLevel.NoCompression : CompressionLevel.Optimal;
+            var entry = archive.CreateEntry(path, level);
 
-                fileStream.Read(data, 0, data.Length);
-
-                return data;
-            }
+            using (var entryStream = entry.Open())
+                entryStream.Write(data, 0, data.Length);
         }
 
-        private PluginDependency[] BuildDependencies()
+        private void AddPublishFiles(SortedDictionary<string, byte[]> entries)
         {
-            if (this.PluginDependencies == null)
-                return Array.Empty<PluginDependency>();
+            var packedFileName = this.PluginAssembly + ".obby";
 
-            var dependencies = new PluginDependency[this.PluginDependencies.Length];
-
-            for (int i = 0; i < dependencies.Length; i++)
+            foreach (var file in Directory.GetFiles(this.PluginPublishDir))
             {
-                var dependency = this.PluginDependencies[i];
-                var id = dependency.GetMetadata("Id");
-                var version = dependency.GetMetadata("Version");
+                var name = Path.GetFileName(file);
 
-                var requiredMetadata = dependency.GetMetadata("Required");
-                var required = !string.IsNullOrEmpty(requiredMetadata) && bool.Parse(requiredMetadata);
-
-                if (string.IsNullOrEmpty(id))
+                if (name.StartsWith("testhost", StringComparison.Ordinal)
+                    || name == packedFileName
+                    || name == MetadataEntryName)
                 {
-                    this.Log.LogWarning("Id is required when defining a dependency.");
                     continue;
                 }
 
-                dependencies[i] = new PluginDependency(id, version ?? ">=1.0", required);
+                entries[name] = File.ReadAllBytes(file);
             }
-
-            return dependencies;
         }
 
-        private void Add(List<Entry> entries, FileInfo file)
+        /// <summary>Adds every file under <paramref name="directory"/> as prefix/relative/path.</summary>
+        private void AddTree(SortedDictionary<string, byte[]> entries, string directory, string prefix)
         {
-            var data = GetData(file);
+            if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+                return;
 
-            var currentLength = data.Length;
+            var root = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
-            this.WriteLine(MessageImportance.High, $"------ Packing {file.Name} ------");
-
-            this.WriteLine(MessageImportance.High, $"Current file length: {currentLength}.");
-
-            if (currentLength > MinCompressionSize)
+            foreach (var file in Directory.GetFiles(root, "*", SearchOption.AllDirectories))
             {
-                using (var ms = new MemoryStream(data.Length))
+                var relative = file.Substring(root.Length + 1).Replace(Path.DirectorySeparatorChar, '/');
+                entries[prefix + "/" + relative] = File.ReadAllBytes(file);
+            }
+        }
+
+        /// <summary>Returns the obsidian.mod.json bytes, or null after logging an error.</summary>
+        private byte[] LoadMetadata()
+        {
+            var candidates = new[]
+            {
+                this.PluginMetadataFile,
+                Path.Combine(this.PluginPublishDir, MetadataEntryName)
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (!string.IsNullOrEmpty(candidate) && File.Exists(candidate))
                 {
-                    using (var deflateSteam = new DeflateStream(ms, CompressionMode.Compress))
-                    {
-                        deflateSteam.Write(data, 0, data.Length);
-                    }
+                    this.Log.LogMessage(MessageImportance.High, "Using metadata from {0}", candidate);
 
-                    var compressedData = ms.ToArray();
-
-                    if (compressedData.Length < currentLength * CompressionTradeoff)
-                    {
-                        data = compressedData;
-                        this.WriteLine(MessageImportance.High, $"Compressed length: {compressedData.Length}.");
-                    }
+                    return File.ReadAllBytes(candidate);
                 }
             }
 
-            entries.Add(new Entry()
-            {
-                Data = data,
-                Name = file.Name,
-                Length = currentLength,
-                CompressedLength = data.Length,
-                FilePath = file.FullName
-            });
+            var metadata = this.BuildMetadata();
+            if (metadata == null)
+                return null;
+
+            return new UTF8Encoding(false).GetBytes(metadata.ToJson());
         }
 
-        private sealed class Entry
+        private ModMetadata BuildMetadata()
         {
-            public string Name { get; set; }
+            var side = NormalizeChoice(this.PluginSide, "both");
+            if (!this.ValidateChoice("PluginSide", side, Sides))
+                return null;
 
-            public int Length { get; set; }
+            var authors = (this.PluginAuthors ?? string.Empty)
+                .Split(',')
+                .Select(author => author.Trim())
+                .Where(author => author.Length > 0)
+                .ToArray();
 
-            public int CompressedLength { get; set; }
+            var dependencies = new List<PluginDependency>();
+            foreach (var item in this.PluginDependencies ?? Array.Empty<ITaskItem>())
+            {
+                var dependency = this.BuildDependency(item);
+                if (dependency == null)
+                    return null;
 
-            public byte[] Data { get; set; }
+                dependencies.Add(dependency);
+            }
 
-            public string FilePath { get; set; }
+            return new ModMetadata
+            {
+                ModId = this.PluginId,
+                DisplayName = EmptyToNull(this.PluginName),
+                Version = this.PluginVersion,
+                Assembly = this.PluginAssembly,
+                ApiVersion = EmptyToNull(this.PluginApiVersion),
+                Authors = authors,
+                Description = EmptyToNull(this.PluginDescription),
+                ProjectUrl = EmptyToNull(this.ProjectUrl),
+                Side = side,
+                Dependencies = dependencies.ToArray()
+            };
         }
 
+        private PluginDependency BuildDependency(ITaskItem item)
+        {
+            var modId = EmptyToNull(item.GetMetadata("Id")) ?? item.ItemSpec;
+            if (string.IsNullOrEmpty(modId))
+            {
+                this.Log.LogError("A PluginDependency item needs a mod id in its Include or Id metadata.");
+
+                return null;
+            }
+
+            var type = NormalizeChoice(item.GetMetadata("Type"), null);
+            var required = item.GetMetadata("Required");
+            if (type == null && !string.IsNullOrEmpty(required))
+                type = bool.Parse(required) ? "required" : "optional";
+
+            var versionRange = EmptyToNull(item.GetMetadata("VersionRange")) ?? EmptyToNull(item.GetMetadata("Version"));
+            var ordering = NormalizeChoice(item.GetMetadata("Ordering"), null);
+            var side = NormalizeChoice(item.GetMetadata("Side"), null);
+
+            var valid = this.ValidateChoice(modId + " Type", type, DependencyTypes)
+                && this.ValidateChoice(modId + " Ordering", ordering, Orderings)
+                && this.ValidateChoice(modId + " Side", side, Sides);
+
+            return valid ? new PluginDependency(modId, type, versionRange, ordering, side) : null;
+        }
+
+        private bool ValidateChoice(string name, string value, string[] allowed)
+        {
+            if (value == null || allowed.Contains(value))
+                return true;
+
+            this.Log.LogError("{0} must be one of {1}, not '{2}'.", name, string.Join(", ", allowed), value);
+
+            return false;
+        }
+
+        private static string NormalizeChoice(string value, string fallback)
+        {
+            return EmptyToNull(value)?.Trim().ToLowerInvariant() ?? fallback;
+        }
+
+        private static string EmptyToNull(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
     }
 }
-
