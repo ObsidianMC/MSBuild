@@ -16,6 +16,11 @@ jobs:
   nuget-publish:
     name: Package Commit
     runs-on: ubuntu-latest
+    # Trusted publishing: NuGet/login trades the job's OIDC token for a short-lived API key, so there's no key to
+    # store or rotate. It needs a nuget.org trusted publishing policy for this repository and workflow file.
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -29,8 +34,19 @@ jobs:
             9.0.x
             8.0.x
             7.0.x
-      - name: Pack n Push
+      - name: Pack
         run: |
           dotnet build -c Release
           dotnet pack -c Release -o build --no-build
-          dotnet nuget push "build/*" --skip-duplicate -k ${{ secrets.NUGET_ORG_API_KEY }} -s https://api.nuget.org/v3/index.json 
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push
+        # Through the environment rather than expanded into the script, which the shell would parse.
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "build/*" --skip-duplicate -k "$NUGET_API_KEY" \
+            -s https://api.nuget.org/v3/index.json
